@@ -2,6 +2,25 @@
 <html>
 <head>
 <title>jQuery 3D :: Simple Example</title>
+
+<style>
+#main {
+	width: 800px;
+	height: 600px;
+	margin: 0 auto;
+}
+#plane {
+	width: 300px;
+	height: 300px;
+	top: 0;
+	left: 0;
+}
+
+.blue {
+	color: #0000ff;
+}
+
+</style>
 </head>
 <body>
 
@@ -11,9 +30,42 @@
 <script src="../build/jquery.three.js"></script>
 <script>
 
+//var $3d = 
+
+$("#main").three({}, function($3d){
+	
+	// do something 
+	$3d.addPlane("plane").addClass("blue");
+  
+});
+
+/*
+$3d.each(function(val, i) {
+  
+});
+
+$.map( $3d, function(val, i) {
+  // do something 
+  console.log(val);
+});
+*/
+//$($3d.each()).addPlane();
+
+//$("#main").three.addPlane(
+
+//function()
+//$3d.each(f){addPlane("plane").addClass("blue");
+
+/*
+$3d.add();
+
 $3d = $("#main").three();
 
-//$3d.add();
+$("#main").three().add("model");
+
+
+*/
+
 
 </script>
 

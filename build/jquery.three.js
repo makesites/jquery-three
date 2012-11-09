@@ -20,47 +20,54 @@ window.requestAnimFrame = ( function( callback ) {
 		
 (function( $ ) {
 	var defaults = {
-		
-		
+		fov: 45, 
+		aspect: 4/3, 
+		near: 1, 
+		far: 1000
 	}
-	var Three = function( obj, options ){
+	var Three = function( obj, options, callback ){
 		
 		var self = this;
 		this.container = obj;
 		this.options = $.extend(defaults, options);
+		// main buckets
+		this.objects = {};
+		this.scenes = {};
+		this.cameras = {};
+		this.last = "";
 		
 		// Dependencies (replace with AMD module?)
-		$.getScript("http://www.html5canvastutorials.com/libraries/Three.js", function () {
-			self.init();
+		$.getScript("https://raw.github.com/mrdoob/three.js/master/build/three.min.js", function () {
+			self.init( options );
+			// execute callback
+			callback( self );
+			
 		});
+		
 	}
 
 Three.prototype = {
      init : function( options ) {
-		 
+		 	
+			var settings = $.extend( defaults, options );
+			
 			// scene
 			this.scene = new THREE.Scene();
 			
 			// camera
-			this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+			this.camera = new THREE.PerspectiveCamera( settings.fov, settings.aspect, settings.near, settings.far );
 			this.camera.position.set( 0, - 450, 400 );
 			this.camera.rotation.x = 45 * ( Math.PI / 180 );
 			this.scene.add( this.camera );
 			
-			// plane
-			this.geometry = new THREE.PlaneGeometry( 300, 300 );
-			this.material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
-			this.mesh = new THREE.Mesh( this.geometry, this.material );
-			
-			this.scene.add( this.mesh );
-			
 			// renderer
 			this.renderer = new THREE.WebGLRenderer();
-			this.renderer.setSize( window.innerWidth, window.innerHeight );
+			this.renderer.setSize( $(this.container).width(), $(this.container).height() );
 			
-			document.body.appendChild( this.renderer.domElement );
+			//document.body.appendChild( this.renderer.domElement );
+			$( this.renderer.domElement ).appendTo( this.container );
 			
-			this.animate();
+			this.tick();
      		
      },
      destroy : function( ) {
@@ -69,43 +76,45 @@ Three.prototype = {
 
          var $this = $(this),
              three = $this.data('three');
-			 // Namespacing FTW
 			 $this.removeData('three');
 
        })
 
      },
 	 // check if the obj has a Three() class attached to it
-	 self: function(){
-		 
-       return this.each(function(){
-
+	 self: function(options, callback){
+		
+		var list = [];
+		
+		this.each(function(){
+			
          var $this = $(this), 
 		 three = $this.data('three');
 		 
 		 // check if three has initialized for the ocntainer
 		 if ( ! three ) {
          
-		 	three = new Three( this, arguments );
+		 	three = new Three( this, options, callback);
            $(this).data('three', three);
 			
          }
-		  
-		  // either way, return the Three class
-			return three;
-		 
-	   });
+		
+			// push the lib down the display list
+			list.push( three );
+		});
+		
+		// return as a jQuery object 
+		return $(list);
 	   
 	 }, 
-	animate : function() {
+	tick : function() {
 		
 		var self = this;
 		// update vars for objects
-		this.mesh.rotation.z = Date.now() / 1000;
 		// 
 		this.render();
 		// loop on the next click
-		requestAnimFrame(function(){ self.animate() });
+		requestAnimFrame(function(){ self.tick() });
 		
 	}, 
 	render : function() {
@@ -113,17 +122,143 @@ Three.prototype = {
 		this.renderer.render( this.scene, this.camera );
 		
 	}, 
+	// generic method to add an element
+	add : function(){
+		//switch
+	},
+	// add a plane
+	addPlane : function( name ){
+		
+		// plane - by default a 1x1 square
+		var geometry = new THREE.PlaneGeometry( 1, 1 );
+		geometry.dynamic = true;
+		var material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+		this.objects[name] = { id: name, mesh: new THREE.Mesh( geometry, material ) };
+		
+		this.scene.add( this.objects[name].mesh );
+		
+		// append to the dom
+		$('<plane>').attr("id", name).appendTo(this.container);
+		
+		// set a reference to the last list
+		this.last = this.objects[name];
+		
+		// set css attributes
+		var css = this.css($(this.container).find("#"+ name ) );
+		this.cssSet( css );
+		
+		return this;
+		
+	}, 
+	// add a plane
+	addClass : function( name ){
+		var object = this.last;
+		// add the class to the markup 
+		$(this.container).find("#"+ object.id ).addClass(name);
+		
+		var css = this.css($(this.container).find("#"+ object.id ) );
+		this.cssSet( css );
+		
+		return this;
+	}, 
+	animate: function(){
+		//this.mesh.rotation.z = Date.now() / 1000;
+		
+	}, 
      show : function( ) {  },
      hide : function( ) { },
-     update : function( content ) { }
-  };
+     update : function( content ) { }, 
+	// CSS Methods
+	css : function (a){
+		var sheets = document.styleSheets, o = {};
+		for(var i in sheets) {
+			var rules = sheets[i].rules || sheets[i].cssRules;
+			for(var r in rules) {
+				if(a.is(rules[r].selectorText)) {
+					o = $.extend(o, this.css2json(rules[r].style), this.css2json(a.attr('style')));
+				}
+			}
+		}
+		return o;
+	}, 
+	cssSet : function( css ){
+		var object = this.last;
+		
+		for( var attr in css ){
+		
+		// supported attributes
+		switch(attr){
+			// - width
+		 	case "width":
+				object.mesh.scale.x = parseInt(css[attr]);
+			break;
+			// - height
+		 	case "height":
+				object.mesh.scale.y = parseInt(css[attr]);
+			break;
+			case "left":
+				object.mesh.position.x = parseInt(css[attr]);
+			break;
+			case "top":
+				object.mesh.position.y = parseInt(css[attr]);
+			break;
+			// - color
+		 	case "color":
+				var color =  this.colorToHex(css[attr]);
+				var material = new THREE.MeshBasicMaterial( { color: color } );
+				object.mesh.material = material;
+			break;
+			 
+		 }
+		 
+		}
+		
+	 },
+	css2json : function (css){
+		var s = {};
+		if(!css) return s;
+		if(css instanceof CSSStyleDeclaration) {
+			for(var i in css) {
+				if((css[i]).toLowerCase) {
+					s[(css[i]).toLowerCase()] = (css[css[i]]);
+				}
+			}
+		} else if(typeof css == "string") {
+			css = css.split("; ");          
+			for (var i in css) {
+				var l = css[i].split(": ");
+				s[l[0].toLowerCase()] = (l[1]);
+			};
+		}
+		return s;
+	},
+	colorToHex : function (color) {
+		if (color.substr(0, 1) === '#') {
+			return color.replace("#", "0x");
+		}
+		var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+		
+		var red = parseInt(digits[2]).toString(16);
+		var green = parseInt(digits[3]).toString(16);
+		var blue = parseInt(digits[4]).toString(16);
+		
+		// add leading zeros if necessary
+		
+		if(red.length == 1) 		red = "0"+red;
+		if(green.length == 1) 	green = "0"+green;
+		if(blue.length == 1) 	blue = "0"+blue;
+		
+		return '0x' + red + green + blue;
+	}
+};
 
   
-  $.fn.three = function( options ) {
-    // fallback
+  $.fn.three = function( options, callback ) {
+    // fallbacks
 	options || ( options = false );
+	callback || ( callback = function(i){  return i } );
 	
-	return Three.prototype.self.apply( this, arguments );
+	return Three.prototype.self.apply( this, arguments, options, callback ); 
 	
 	/*
 	if( !options) {
@@ -146,3 +281,4 @@ Three.prototype = {
   };
 
 })( jQuery );
+
