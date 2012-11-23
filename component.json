@@ -1,7 +1,7 @@
 {
   "name": "jQuery Three",
   "version": "0.1.0",
-  "main": ["./build/jquery.three.js"],
+  "main": ["./build/jquery.three-min.js"],
   "dependencies": {
 	  "jquery": "~1.8.2"
 	}
