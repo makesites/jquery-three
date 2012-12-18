@@ -21,10 +21,6 @@ window.requestAnimFrame = ( function( callback ) {
 
 (function( $ ) {
 	var defaults = {
-		fov: 45, 
-		aspect: 4/3, 
-		near: 1, 
-		far: 1000
 	};
 	
 	Three = function( obj, options, callback ){
@@ -40,36 +36,42 @@ window.requestAnimFrame = ( function( callback ) {
 		
 		// Dependencies (replace with AMD module?)
 		$.getScript("https://raw.github.com/mrdoob/three.js/master/build/three.min.js", function () {
-		self.init( options );
-		// execute callback
-		if(typeof callback != "undefined") callback( self );
+			self.init( options );
+			// execute callback
+			if(typeof callback != "undefined") callback( self );
 		
-	});
+		});
 
 };
 
 Three.prototype = {
 	init : function( options ) {
 		
+		var self = this;
 		var settings = $.extend( defaults, options );
 		
-		// check if the container has markup before creating the default scene/camera
+		this.active = {
+			scene: false,
+			camera: false
+		};
 		
-		// scene
-		this.scene = new THREE.Scene();
-		
-		// camera
-		this.camera = new THREE.PerspectiveCamera( settings.fov, settings.aspect, settings.near, settings.far );
-		this.camera.position.set( 0, 0, 400 );
-		this.camera.rotation.x = 0 * ( Math.PI / 180 );
-		this.scene.add( this.camera );
-		
-		// renderer
+		// init renderer
 		this.renderer = new THREE.WebGLRenderer();
 		this.renderer.setSize( $(this.container).width(), $(this.container).height() );
 		
 		//document.body.appendChild( this.renderer.domElement );
 		$( this.renderer.domElement ).appendTo( this.container );
+		
+		// check if the container has markup
+		var html =  $(this.container).html();
+		// everything needs to be enclosed in a scene??
+		$(html).filter("scene").each(function(i, el){
+			
+			self.createScene(el);
+			
+		});
+		
+		
 		
 		this.tick();
 		
@@ -110,6 +112,7 @@ Three.prototype = {
 		return $(list);
 		
 	}, 
+	// one cycle in an infinite loop
 	tick : function() {
 		
 		var self = this;
@@ -122,8 +125,11 @@ Three.prototype = {
 	}, 
 	render : function() {
 		// apply transformations
-		this.renderer.render( this.scene, this.camera );
 		
+		//
+		if( this.active.scene && this.active.camera ){
+			this.renderer.render( this.active.scene, this.active.camera );
+		}
 	}, 
 	
 	show : function( ) {  },
@@ -214,6 +220,7 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 		return o;
 	}, 
+	
 	cssSet : function( css ){
 		var object = this.last;
 		
@@ -277,6 +284,37 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 		
 	},
+	
+	cssScene : function( css ){
+		//
+		for( var attr in css ){
+			// supported attributes
+			switch(attr){
+				case "display":
+					// set it as the active one...
+				break;
+				case "background-image":
+					// background of a scene is a skydome...
+					this.cssSkybox(css[attr]);
+				break;
+			}
+		}
+	}, 
+	cssSkybox : function( attr ){
+		// remove any whitespace, the url(..) and
+		// attempt to break it into an array
+		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
+		if(img instanceof Array){
+			// expext a six-pack of images
+			//console.log( img );
+			
+		} else {
+			// this is one image... not implemented yet
+		}
+		
+		
+	}, 
+	// Helpers
 	css2json : function (css){
 		var s = {};
 		if(!css) return s;
@@ -323,7 +361,12 @@ Three.prototype = $.extend(Three.prototype, {
 	
 Three.prototype = $.extend(Three.prototype, {
 	// generic method to add an element
-	add : function(){
+	add : function(html, scene){
+		// use the active scene if not specified
+		var as = scene || this.active.scene;
+		// get the type from the tag name
+		var type = html.nodeName.toLowerCase();
+			
 		//switch
 	},
 	// add a plane
@@ -349,7 +392,19 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	}
+	}, 
+	// add camera(s)
+	addCamera : function( name ){
+		
+	}, 
+	// add meshes
+	addMesh : function( name ){
+		
+	}, 
+	// add asset
+	addAsset : function( name ){
+		
+	} 
 	
 });
 
@@ -358,6 +413,27 @@ Three.prototype = $.extend(Three.prototype, {
 	
 Three.prototype  = $.extend(Three.prototype, {
 	
+	createScene : function( html ){
+		var $scene = $(html);
+		var self = this;
+		//make this optional? 
+		var id = $scene.attr("id");
+		// create a new scene
+		this.scenes[id] = new THREE.Scene();
+		// loop throught the (first level) children of the scene
+		$scene.children().each(function(i, el){
+			//
+			self.add( this, self.scenes[id]); 
+		});
+		// render all supported objects 
+		
+		// get css attributes
+		var css = this.css( $scene );
+		
+		this.cssScene( css );
+		
+		
+	}
 	
 });
 
