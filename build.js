@@ -22,7 +22,8 @@ concat({
         'lib/manipulation.js',
         'lib/markup.js',
 		'lib/selectors.js',
-		'lib/utils.js'
+		'lib/three.js',
+        'lib/utils.js'
     ],
     dest : 'build/jquery.three.js'
 });
