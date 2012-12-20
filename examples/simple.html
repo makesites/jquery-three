@@ -9,15 +9,26 @@
 	height: 600px;
 	margin: 0 auto;
 }
-#plane {
+
+plane {
 	width: 300px;
 	height: 300px;
 	top: 0;
 	left: 0;
 }
 
+camera {
+	-webkit-transform: translate3d( 0, 0, 400px);
+}
+
 .blue {
 	color: #0000ff;
+	-webkit-animation:spin .5s infinite linear;
+}
+
+@-webkit-keyframes spin {
+	0% { -webkit-transform:rotate(0deg); }
+	100% { -webkit-transform:rotate(360deg); }
 }
 
 </style>
@@ -30,42 +41,11 @@
 <script src="../build/jquery.three.js"></script>
 <script>
 
-//var $3d = 
-
 $("#main").three({}, function($3d){
 	
-	// do something 
-	$3d.addPlane("plane").addClass("blue");
+	$3d.addScene().addCamera().addPlane({ id : "plane-name" }).addClass("blue");
   
 });
-
-/*
-$3d.each(function(val, i) {
-  
-});
-
-$.map( $3d, function(val, i) {
-  // do something 
-  console.log(val);
-});
-*/
-//$($3d.each()).addPlane();
-
-//$("#main").three.addPlane(
-
-//function()
-//$3d.each(f){addPlane("plane").addClass("blue");
-
-/*
-$3d.add();
-
-$3d = $("#main").three();
-
-$("#main").three().add("model");
-
-
-*/
-
 
 </script>
 
