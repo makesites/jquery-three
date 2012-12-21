@@ -37,7 +37,7 @@ window.requestAnimFrame = ( function( callback ) {
 		this.parent = false;
 		
 		// Dependencies (replace with AMD module?)
-		$.getScript("https://raw.github.com/mrdoob/three.js/master/build/three.min.js", function () {
+		$.getScript("http://cdnjs.cloudflare.com/ajax/libs/three.js/r53/three.min.js", function () {
 			self.init( options );
 			// execute callback
 			if(typeof callback != "undefined") callback( self );
@@ -51,16 +51,18 @@ Three.prototype = {
 		
 		var self = this;
 		var settings = $.extend( defaults, options );
-		
+		// create active object
 		this.active = {
 			scene: false,
 			camera: false, 
 			skybox: false
 		};
+		// set properties
+		this.properties = this.setProperties();
 		
 		// init renderer
 		this.renderer = new THREE.WebGLRenderer();
-		this.renderer.setSize( $(this.container).width(), $(this.container).height() );
+		this.renderer.setSize( this.properties.width,  this.properties.height);
 		// condition this!
 		this.renderer.autoClear = false;
 		
@@ -79,6 +81,11 @@ Three.prototype = {
 		//this.active.camera = this.cameras[0];
 		// don't set as active if it's 'hidden'
 		//if( css.display == "none" ) return;
+		
+		// resize event listener
+		window.addEventListener( 'resize', function(){
+			self.resize();
+		}, false );
 		
 		this.tick();
 		
@@ -132,7 +139,10 @@ Three.prototype = {
 	}, 
 	render : function() {
 		// apply transformations
-		
+		$(this.container).trigger({
+			type: "update",
+			target: this
+		});
 		//
 		if( this.active.scene && this.active.camera ){
 			// render the skybox as a first pass
@@ -166,6 +176,25 @@ Three.prototype = {
 				return ( this.webgl && this.canvas && this.workers && this.fileapi );
 			}
 		};
+	}, 
+	// trigger when the window is resized
+	resize: function(){
+		
+		// update properties
+		this.properties = this.setProperties();
+		
+		// loop through cameras
+		for( var i in this.cameras ){
+			
+			this.cameras[i].aspect = this.properties.aspect;
+			this.cameras[i].updateProjectionMatrix();
+			// better way of targeting skybox???
+			this.active.skybox.aspect = this.properties.aspect;
+			this.active.skybox.updateProjectionMatrix();
+			
+		}
+		
+		this.renderer.setSize( this.properties.width, this.properties.height );
 	}
 
 };
@@ -275,7 +304,12 @@ Three.prototype = $.extend(Three.prototype, {
 				break;
 				// - transforms
 				case "transform":
-					object.position = this.cssTransform( css[attr] );
+					if(css[attr].search("translate3d") > -1 ){ 
+						object.position = this.cssTranslate( css[attr] );
+					}
+					if(css[attr].search("rotate3d") > -1 ){ 
+						object.rotation = this.cssRotate( css[attr] );
+					}
 				break;
 				// - animation
 				case "animation-duration":
@@ -306,6 +340,8 @@ Three.prototype = $.extend(Three.prototype, {
 					// background of a scene is a skydome...
 					if( object instanceof THREE.Scene)
 						this.cssSkybox(css[attr]);
+					if( object.type == "terrain" )
+						this.cssTerrain(css[attr]);
 				break;
 			}
 			
@@ -338,13 +374,73 @@ Three.prototype = $.extend(Three.prototype, {
 		
 	}, 
 	
-	cssTransform: function( attr ){
+	cssTerrain : function( attr ){
+		var object = this.last;
+		
+		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
+		if(img instanceof Array){
+			for( var i in img ){
+				if( img[i].search("heightmap") > -1  ){
+					
+					var heightmapTexture = THREE.ImageUtils.loadTexture( img[i] );
+					object.material.uniforms.tDisplacement.value = heightmapTexture;
+					object.material.uniforms.uDisplacementScale.value = 375;
+					// heightmap also the second diffuse map? 
+					var diffuseTexture2 = heightmapTexture;
+					diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+					
+					object.material.uniforms.tDiffuse2.value = diffuseTexture2;
+					object.material.uniforms.enableDiffuse2.value = true;
+		
+				}
+				if( img[i].search("diffuse") > -1  ){
+					
+					var diffuseTexture1 = THREE.ImageUtils.loadTexture( img[i] );
+					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
+					
+					object.material.uniforms.tDiffuse1.value = diffuseTexture1;
+					object.material.uniforms.enableDiffuse1.value = true;
+					
+				}
+				if( img[i].search("specular") > -1 ){
+								
+					var specularMap = THREE.ImageUtils.loadTexture( img[i] );
+					specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
+					
+					object.material.uniforms.tSpecular.value = specularMap;
+					object.material.uniforms.enableSpecular.value = true;
+					
+				}
+			}
+		} else {
+			// one image... which texture is it?...
+		}
+		
+		/*
+		
+		leftovers ( normal and detail textures) 
+		
+		//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
+		
+		//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
+		//uniformsTerrain[ "uNormalScale" ].value = 1;
+		
+		//uniformsTerrain[ "tDetail" ].value = detailTexture;
+		
+		//uniformsTerrain[ "uShininess" ].value = 30;
+
+		*/
+	}, 
+	
+	cssTranslate: function( attr ){
 		
 		var pos = {};
 		// only supporting translate3d for now...
-		if( attr.search("translate3d") === 0 ){
+		if( attr.search("translate3d") > -1 ){
 			// replace all the bits we don't need
-			var val = attr.replace(/translate3d\(|px|\)| /gi, "").split(",");
+			var val = attr.match(/translate3d\(([\s\S]*?)\)/gi);
+			// match returns array...
+			val = val[0].replace(/translate3d\(|px|\)| /gi, "").split(",");
 			// add the right keys
 			pos = {
 				x: parseInt( val[0], 10 ) || 0,
@@ -355,6 +451,28 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 		
 		return pos;
+		
+	}, 
+	
+	cssRotate: function( attr ){
+		
+		var rot = {};
+		// only supporting rotate3d for now...
+		if( attr.search("rotate3d") > -1 ){
+			// replace all the bits we don't need
+			var val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
+			// match returns array...
+			val = val[0].replace(/rotate3d\(|deg|\)| /gi, "").split(",");
+			// first three numbers toggle axis application - fourth is the degrees
+			rot = {
+				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 ) : 0,
+				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 ) : 0,
+				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 ) : 0
+			};
+			
+		}
+		
+		return rot;
 		
 	}, 
 	
@@ -419,7 +537,7 @@ Three.prototype = $.extend(Three.prototype, {
 		// add a new tag (if necessary)
 		//if ( options.html ){ 
 		// add the webgl id as a data-id
-		options["data-id"] = webgl.id;
+		options["data-id"] = webgl.id || false;
 		var $html = this.createHTML( options );
 		
 		// set a reference to the last el (for later)
@@ -530,6 +648,17 @@ Three.prototype = $.extend(Three.prototype, {
 					camera : camera
 				};
 				
+	},
+	addTerrain: function( obj ){
+		
+		var options = obj ||{};
+		
+		options.type = "terrain";
+		
+		this.add(options);
+		
+		return this;
+		
 	}
 });
 
@@ -649,11 +778,15 @@ Three.prototype = $.extend(Three.prototype, {
 			case "plane": 
 				el = this.webglPlane( options );
 			break;
+			case "terrain": 
+				el = this.webglTerrain( options );
+			break;
 		}
 		
 		return el; 
 		
 	},
+	
 	webglScene: function( options ){
 		
 		var defaults = {
@@ -667,13 +800,14 @@ Three.prototype = $.extend(Three.prototype, {
 		return scene;
 		
 	}, 
+	
 	webglCamera: function( attributes ){
 		// 
 		var camera;
 		
 		var defaults = {
 				fov: 50, 
-				aspect: $(this.container).width() / $(this.container).height(), 
+				aspect: this.properties.aspect, 
 				near: 1, 
 				far: 1000, 
 				scene: this.active.scene
@@ -693,14 +827,28 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return camera;
 	}, 
+	
 	webglMesh: function( attributes ){
-		//var mesh 
-		//return mesh;
+		var mesh;
+		var defaults = {
+			id : false, 
+			scene: this.active.scene
+		}; 
+		
+		var options = $.extend(defaults, attributes);
+		
+		//var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		//var mash = new THREE.Mesh( geometry, material );
+		// wireframe toggle? new THREE.MeshBasicMaterial( {color: Math.random() * 0xffffff, wireframe: true });
+		
+		return mesh;
 	}, 
+	
 	webglLight: function( attributes ){
 		//var light 
 		//return light;
 	}, 
+	
 	webglPlane: function( attributes ){
 		// plane - by default a 1x1 square
 		var defaults = {
@@ -712,19 +860,212 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		var options = $.extend(defaults, attributes);
 		
-		var name = options.id || random(10000);
 		var geometry = new THREE.PlaneGeometry( options.width, options.height );
 		// make this optional?
 		geometry.dynamic = true;
 		var material = new THREE.MeshBasicMaterial( { color: options.color } );
-		this.objects[name] = new THREE.Mesh( geometry, material );
-		this.objects[name].name = name; 
+		var mesh = new THREE.Mesh( geometry, material );
 		
-		options.scene.add( this.objects[name] );
+		// set attributes
+		if( options.id ) mesh.name = id;
 		
-		return this.objects[name];
+		// save in the objects bucket 
+		this.objects[mesh.id] = mesh;
+		
+		options.scene.add( mesh );
+		
+		return mesh;
+		
+	}, 
+	
+	webglSphere: function( attributes ){
+		
+		var defaults = {
+			id : false, 
+			radius : 1,
+			segments : 16,
+			rings : 16, 
+			color: 0x000000, 
+			scene: this.active.scene
+		}; 
+		
+		var options = $.extend(defaults, attributes);
+		
+		var geometry = new SphereGeometry( options.radius, options.segments, options.rings);
+		// make this optional?
+		geometry.dynamic = true;
+		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var mesh = new THREE.Mesh( geometry, material );
+		
+		// set attributes
+		if( options.id ) mesh.name = id;
+		
+		// save in the objects bucket 
+		this.objects[mesh.id] = mesh;
+		
+		// add to scene
+		options.scene.add( mesh );
+		
+		return mesh;
+	}, 
+	
+	webglCube: function( attributes ){
+		
+		var defaults = {
+			id : false, 
+			width : 1, 
+			height : 1, 
+			depth : 1, 
+			color: 0x000000, 
+			scene: this.active.scene
+		}; 
+		
+		var options = $.extend(defaults, attributes);
+		
+		var geometry = new CubeGeometry( options.width, options.height, options.depth);
+		// make this optional?
+		geometry.dynamic = true;
+		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var mesh = new THREE.Mesh( geometry, material );
+		
+		// set attributes
+		if( options.id ) mesh.name = id;
+		
+		// save in the objects bucket 
+		this.objects[mesh.id] = mesh;
+		
+		// add to scene
+		options.scene.add( mesh );
+		
+		return mesh;
+	}, 
+	
+	webglCylinder: function( attributes ){
+		
+		var defaults = {
+			id : false, 
+			radiusTop : 100, 
+			radiusBottom : 100, 
+			segmentsRadius : 400, 
+			segmentsHeight : 50, 
+			openEnded : 50, 
+			color: 0x000000, 
+			scene: this.active.scene
+		}; 
+		
+		var options = $.extend(defaults, attributes);
+		
+		var geometry = new CylinderGeometry( options.radiusTop, options.radiusBottom, options.segmentsRadius, options.segmentsHeight, options.openEnded, false);
+		// make this optional?
+		//geometry.overdraw = true;
+        geometry.dynamic = true;
+		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var mesh = new THREE.Mesh( geometry, material );
+		
+		// set attributes
+		if( options.id ) mesh.name = id;
+		
+		// save in the objects bucket 
+		this.objects[mesh.id] = mesh;
+		
+		// add to scene
+		options.scene.add( mesh );
+		
+		return mesh;
+	
+	}, 
+	
+	webglTerrain: function( attributes ){
+		// assuming that terrain is generated from a heightmap - support class="mesh" in the future? 
+		var terrain;
+		
+		var defaults = {
+				
+		};
+		
+		
+		this.active.scene.add( new THREE.AmbientLight( 0x111111 ) );
+
+		directionalLight = new THREE.DirectionalLight( 0xffffff, 1.15 );
+		directionalLight.position.set( 500, 2000, 0 );
+		this.active.scene.add( directionalLight );
+		
+		
+		var plane = new THREE.PlaneGeometry( 6000, 6000, 256, 256 );
+
+		plane.computeFaceNormals();
+		plane.computeVertexNormals();
+		plane.computeTangents();
+
+
+		//
+		
+		var terrainShader = THREE.ShaderTerrain.terrain;
+
+		uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
+		/*
+		var heightmapTexture = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
+		var diffuseTexture1 = THREE.ImageUtils.loadTexture( "assets/img/terrain/diffuse.jpg" );
+		var diffuseTexture2 = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
+		var specularMap = THREE.ImageUtils.loadTexture( "assets/img/terrain/specular.png");
+	
+		diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
+		diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+		//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
+		specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
+		
+		//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
+		//uniformsTerrain[ "uNormalScale" ].value = 1;
+		
+		uniformsTerrain[ "tDisplacement" ].value = heightmapTexture;
+		uniformsTerrain[ "uDisplacementScale" ].value = 375;
+
+		uniformsTerrain[ "tDiffuse1" ].value = diffuseTexture1;
+		uniformsTerrain[ "tDiffuse2" ].value = diffuseTexture2;
+		uniformsTerrain[ "tSpecular" ].value = specularMap;
+		//uniformsTerrain[ "tDetail" ].value = diffuseTexture1;
+
+		uniformsTerrain[ "enableDiffuse1" ].value = true;
+		uniformsTerrain[ "enableDiffuse2" ].value = true;
+		uniformsTerrain[ "enableSpecular" ].value = true;
+
+		uniformsTerrain[ "uDiffuseColor" ].value.setHex( 0xffffff );
+		uniformsTerrain[ "uSpecularColor" ].value.setHex( 0xffffff );
+		uniformsTerrain[ "uAmbientColor" ].value.setHex( 0x111111 );
+
+		//uniformsTerrain[ "uShininess" ].value = 30;
+
+		uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
+		*/
+
+		uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
+		uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
+		uniformsTerrain.uAmbientColor.value.setHex( 0x111111 );
+
+		uniformsTerrain.uRepeatOverlay.value.set( 6, 6 );
+		//
+
+		// fog is expensive - disable for now...
+		var material = new THREE.ShaderMaterial( {
+								uniforms :				uniformsTerrain,
+								vertexShader :		terrainShader.vertexShader,
+								fragmentShader :		terrainShader.fragmentShader,
+								lights :					true,
+								fog :						false
+		});
+
+		terrain = new THREE.Mesh( plane, material );
+
+		// save type as part of the mesh 
+		terrain.type = "terrain";
+		
+		//terrain.visible=false;
+		this.active.scene.add( terrain );
+		
+		return terrain;
 		
 	}
+	
 });
 
 })( jQuery );
@@ -770,6 +1111,14 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 		
 		return data;
+	}, 
+	
+	setProperties: function() {
+		return {
+			width: $(this.container).width(),
+			height: $(this.container).height(),
+			aspect: ( $(this.container).width() / $(this.container).height() )
+		};
 	}
 	
 });
