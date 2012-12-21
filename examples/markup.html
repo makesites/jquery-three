@@ -1,14 +1,22 @@
 <!doctype html>
 <html>
 <head>
-<title>jQuery 3D :: Simple Example</title>
+<title>jQuery Three :: Markup Environment</title>
 
 <style>
-.skybox {
-	
+body, html{ margin: 0; padding: 0; width: 100%; height: 100%; }
+
+#main {
+	width: 100%; 
+	height: 100%;
 }
-.mountain {
-	
+			
+scene {
+	background-image: url(assets/img/skybox/t5/px.jpg), url(assets/img/skybox/t5/nx.jpg), url(assets/img/skybox/t5/py.jpg), url(assets/img/skybox/t5/ny.jpg), url(assets/img/skybox/t5/pz.jpg), url(assets/img/skybox/t5/nz.jpg);
+}
+terrain {
+	background-image: url(assets/img/terrain/heightmap.png), url(assets/img/terrain/diffuse.jpg), url(assets/img/terrain/specular.png);
+	-webkit-transform: translate3d( 0, -225px, 0 ) rotate3d(1, 0, 0, 30deg);
 }
 </style>
 </head>
@@ -16,11 +24,14 @@
 
 <div id="main">
 <scene id="s1" class="skybox">
-	<camera perspective="500">
-    <player id="">
-    <terrain class="mountain">
+	<camera perspective="500"></camera>
+    <terrain class="mountain"></terrain>
 </scene>
 </div>
+
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r53/three.min.js"></script>
+
+		<script type="text/javascript" src="assets/js/ShaderTerrain.js"></script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 <script src="../build/jquery.three.js"></script>
@@ -28,20 +39,50 @@
 
 $3d = $("#main").three();
 
-/*
-$3d.add();
-
-$3d = $("#main").three();
-
-$("#main").three().add("model");
-
-$3d.add("model");
-*/
-
-
 </script>
+<script> 
+			
+			// variables
+			var mouseX = 0;
+			var mouseY = 0;
+			
+			// initiate 3d environemnt
+			$("#main").three();
+			
+			// add event listener
+			$("#main").on("update", function(e){
+					
+					// the ed environment is passed as target 
+					var $3d = e.target;
+					
+					$3d.active.camera.lookAt( $3d.active.scene.position );
+					
+					$3d.active.camera.position.x += ( mouseX - $3d.active.camera.position.x ) * 0.05;
+					$3d.active.camera.position.y += ( - mouseY - $3d.active.camera.position.y ) * 0.05;
+					
+			});
+				
+			// add mouse tracking
+			document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+			function onDocumentMouseMove(event) {
+
+				mouseX = ( event.clientX - (window.innerWidth / 2) ) * 4;
+				mouseY = ( event.clientY - (window.innerHeight / 2) ) * 4;
+				
+			}
+			
+		</script>
+
+
+<player id="">
+    <user>
+      <actor physics="">
+        <camera active=true />
+        <model class="">
+      </actor>
+    </user>
+</player>
 
 </body>
-
-
 </html>
