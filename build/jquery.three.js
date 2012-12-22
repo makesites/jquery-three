@@ -534,6 +534,8 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		//	create 3d element
 		var webgl = this.webgl( options );
+		// exit now if no webgl object was created
+		if(typeof webgl == "undefined") return this;
 		// add a new tag (if necessary)
 		//if ( options.html ){ 
 		// add the webgl id as a data-id
