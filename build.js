@@ -14,6 +14,7 @@ var _cli = require('commander'),
  // - concatinate all files
 concat({
     src : [
+		'lib/_start.js',
         'lib/core.js',
         'lib/attributes.js',
         'lib/css.js',
@@ -23,7 +24,8 @@ concat({
         'lib/markup.js',
 		'lib/selectors.js',
 		'lib/three.js',
-        'lib/utils.js'
+        'lib/utils.js',
+		'lib/_end.js'
     ],
     dest : 'build/jquery.three.js'
 });

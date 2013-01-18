@@ -20,6 +20,8 @@ window.requestAnimFrame = ( function( callback ) {
 })();
 
 (function( $ ) {
+
+
 	var defaults = {
 	};
 	
@@ -32,15 +34,16 @@ window.requestAnimFrame = ( function( callback ) {
 		this.objects = {};
 		this.scenes = {};
 		this.cameras = {};
+		this.materials = {};
 		// pointers for objects
 		this.last = false;
 		this.parent = false;
 		
 		// Dependencies (replace with AMD module?)
-		$.getScript("http://cdnjs.cloudflare.com/ajax/libs/three.js/r53/three.min.js", function () {
+		this.dependencies( function () {
 			self.init( options );
 			// execute callback
-			if(typeof callback != "undefined") callback( self );
+			if( callback instanceof Function ) callback( self );
 		
 		});
 
@@ -66,6 +69,8 @@ Three.prototype = {
 		// condition this!
 		this.renderer.autoClear = false;
 		
+		// #23 - remove fallback message
+		$(this.container).find(".fallback").remove();
 		// check if the container has (existing) markup
 		var html = $(this.container).html();
 		// clear it off...
@@ -144,6 +149,7 @@ Three.prototype = {
 			target: this
 		});
 		//
+		
 		if( this.active.scene && this.active.camera ){
 			// render the skybox as a first pass
 			if( this.active.skybox ){
@@ -195,7 +201,22 @@ Three.prototype = {
 		}
 		
 		this.renderer.setSize( this.properties.width, this.properties.height );
-	}
+	}, 
+	
+	dependencies : function( callback ){
+		
+		var scripts = false;
+		if(typeof THREE == "undefined") scripts = "http://cdnjs.cloudflare.com/ajax/libs/three.js/r53/three.min.js";  
+		
+		// replace this with a proper dependency loader... 
+		if( scripts ){ 
+			$.getScript(scripts, callback);
+		} else {
+			callback();
+		}
+
+	} 
+	
 
 };
 
@@ -227,13 +248,36 @@ $.error( 'Method ' +  method + ' does not exist on jQuery.Three' );
 */
 };
 
-})( jQuery );
 
-(function( $ ) {
-
-Three.prototype = $.extend(Three.prototype, {
-	// add a class
-	addClass : function( name ){
+// get attributes from tags
+Three.prototype.getAttributes = function( html ){
+		// 
+		var data={};
+		// filter only the ones with the data- prefix
+		$(html).each(function(){
+			
+			var attr = this.attributes;
+				
+			for( var i in attr ){
+				if( attr[i].name && attr[i].name.search("data-") === 0 ){
+					var key = attr[i].name.replace("data-", "");
+					var val = attr[i].value;
+					// check if it's a number...
+					data[key] = ( parseInt(val, 10) ) ? parseInt(val, 10) :  val;
+				} else if( attr[i].name && attr[i].name.search("class") === 0 ){
+					// add classes
+					var classes = attr[i].value.split(" ");
+					data["class"] = classes;
+				}
+			}
+		
+		});
+		
+		return data;
+	};
+	
+// add a class
+Three.prototype.addClass = function( name ){
 		var object = this.last;
 		// add the class to the markup 
 		var $el = $(this.container).find("[data-id='"+ object.id +"']");
@@ -243,16 +287,11 @@ Three.prototype = $.extend(Three.prototype, {
 		this.cssSet( css );
 		
 		return this;
-	}
-	
-});
+	};
 
-})( jQuery );
-(function( $ ) {
 
-Three.prototype = $.extend(Three.prototype, {
-	// CSS Methods
-	css : function (a){
+// CSS Methods
+Three.prototype.css = function (a){
 		var sheets = document.styleSheets, o = {};
 		for(var i in sheets) {
 			var rules = sheets[i].rules || sheets[i].cssRules;
@@ -265,9 +304,9 @@ Three.prototype = $.extend(Three.prototype, {
 			}
 		}
 		return o;
-	}, 
+	};
 	
-	cssSet : function( css ){
+Three.prototype.cssSet = function( css ){
 		var object = this.last;
 		
 		if( !object ) return;
@@ -349,7 +388,7 @@ Three.prototype = $.extend(Three.prototype, {
 			
 		}
 		
-	},
+	};
 	/*
 	cssScene : function( css ){
 		//
@@ -361,7 +400,7 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 	}, 
 	*/
-	cssSkybox : function( attr ){
+Three.prototype.cssSkybox = function( attr ){
 		// remove any whitespace, the url(..) and
 		// attempt to break it into an array
 		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
@@ -374,9 +413,9 @@ Three.prototype = $.extend(Three.prototype, {
 		}
 		
 		
-	}, 
+	};
 	
-	cssTerrain : function( attr ){
+Three.prototype.cssTerrain = function( attr ){
 		var object = this.last;
 		
 		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
@@ -432,9 +471,10 @@ Three.prototype = $.extend(Three.prototype, {
 		//uniformsTerrain[ "uShininess" ].value = 30;
 
 		*/
-	}, 
+	};
 	
-	cssTranslate: function( attr ){
+// Converts a Translate3D property to a Three.js Position object
+Three.prototype.cssTranslate = function( attr ){
 		
 		var pos = {};
 		// only supporting translate3d for now...
@@ -454,9 +494,10 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return pos;
 		
-	}, 
+	};
 	
-	cssRotate: function( attr ){
+// Converts a Rotate3D property to a Three.js Rotate
+Three.prototype.cssRotate = function( attr ){
 		
 		var rot = {};
 		// only supporting rotate3d for now...
@@ -476,10 +517,11 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return rot;
 		
-	}, 
+	};
 	
-	// Helpers
-	css2json : function (css){
+
+// Helpers
+Three.prototype.css2json = function (css){
 		var s = {};
 		if(!css) return s;
 		if(css instanceof CSSStyleDeclaration) {
@@ -496,40 +538,32 @@ Three.prototype = $.extend(Three.prototype, {
 			}
 		}
 		return s;
-	}
+	};
 
-});
 
-})( jQuery );
-(function( $ ) {
-	
-Three.prototype = $.extend(Three.prototype, {
-	
-	animate: function(){
+Three.prototype.animate = function(){
 		//this.mesh.rotation.z = Date.now() / 1000;
 		
-	}
-	
-});
+	};
 
-})( jQuery );
-(function( $ ) {
-	
+/*
 Three.prototype = $.extend(Three.prototype, {
 	
 	
 });
+*/
 
-})( jQuery );
-(function( $ ) {
-	
-Three.prototype = $.extend(Three.prototype, {
-	// generic method to add an element
-	add : function( options ){
+// generic method to add an element
+Three.prototype.add = function( options ){
 		// use the active scene if not specified
 		//var parent = scene || this.active.scene;
 		// get the type from the tag name
 		//var type = html.nodeName.toLowerCase();
+		// list of containers (we'll be using)
+		var groups = {
+			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
+		};
+		var object;
 		
 		// exit if no type is specified
 		if( typeof options == "undefined" || typeof options.type == "undefined" ) return this;
@@ -540,25 +574,48 @@ Three.prototype = $.extend(Three.prototype, {
 		if(typeof webgl == "undefined") return this;
 		// add a new tag (if necessary)
 		//if ( options.html ){ 
-		// add the webgl id as a data-id
-		options["data-id"] = webgl.id || false;
-		var $html = this.createHTML( options );
 		
 		// set a reference to the last el (for later)
 		this.last = webgl;
 		
+		// add to the relevant bucket
+		var container = groups[ options.type ] || false;
+		// create object container only for primitives...
+		if( container == "objects" ){
+			// create new object
+			object = new THREE.Object3D();
+			object.add(webgl);
+		} else {
+			object = webgl;
+		}
+		//this[ options.type+"s" ][0] = webgl;
+		// condition which elements have an active flag?
+		this.active[ options.type ] = object;
+		//
+		if( container ){
+			// save in the objects bucket 
+			this[container][object.id] = object;
+		}
+		// add to scene
+		if( options.type == "scene"){ 
+			this.active.scene = object;
+		} else {
+			this.active.scene.add( object );
+		}
+		// keep a reference of the object id
+		options["data-id"] = object.id || false;
+		// create the tag in the shadow dom
+		var $html = this.createHTML( options );
+		
 		// apply css 
 		var css = this.css( $html );
 		this.cssSet( css );
-		// add to the relevant bucket
-		//this[ options.type+"s" ][0] = webgl;
-		this.active[ options.type ] = webgl;
-		//
 		
 		return this;
 		
-	},
-	addScene : function( obj ){
+	};
+	
+Three.prototype.addScene = function( obj ){
 		
 		var options = obj ||{};
 		
@@ -568,22 +625,10 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	}, 
+	};
 	
-	// add a plane
-	addPlane : function( obj ){
-		
-		var options = obj ||{};
-		
-		options.type = "plane";
-		
-		this.add(options);
-		
-		return this;
-		
-	}, 
-	// add camera(s)
-	addCamera : function( obj ){
+// add camera(s)
+Three.prototype.addCamera = function( obj ){
 		
 		var options = obj ||{};
 		
@@ -593,9 +638,10 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	}, 
-	// add meshes
-	addMesh : function( obj ){
+	};
+	
+// add meshes
+Three.prototype.addMesh = function( obj ){
 		
 		var options = obj ||{};
 		
@@ -605,9 +651,62 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	}, 
-	// add asset
-	addAsset : function( obj ){
+	};
+	
+// add a plane
+Three.prototype.addPlane = function( obj ){
+		
+		var options = obj ||{};
+		
+		options.type = "plane";
+		
+		this.add(options);
+		
+		return this;
+		
+	};
+	
+// add a sphere
+Three.prototype.addSphere = function( obj ){
+		
+		var options = obj ||{};
+		
+		options.type = "sphere";
+		
+		this.add(options);
+		
+		return this;
+		
+	};
+	
+// add a cube
+Three.prototype.addCube = function( obj ){
+		
+		var options = obj ||{};
+		
+		options.type = "cube";
+		
+		this.add(options);
+		
+		return this;
+		
+	};
+	
+// add a cylinder
+Three.prototype.addCylinder = function( obj ){
+		
+		var options = obj ||{};
+		
+		options.type = "cylinder";
+		
+		this.add(options);
+		
+		return this;
+		
+	};
+	
+// add asset
+Three.prototype.addAsset = function( obj ){
 		
 		var options = obj ||{};
 		
@@ -617,9 +716,9 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	},  
+	};  
 	
-	addSkybox: function( img ){
+Three.prototype.addSkybox = function( img ){
 			
 				// does this camera have set values??
 				var camera = new THREE.PerspectiveCamera( 50, $(this.container).width() / $(this.container).height(), 1, 100 );
@@ -652,8 +751,9 @@ Three.prototype = $.extend(Three.prototype, {
 					camera : camera
 				};
 				
-	},
-	addTerrain: function( obj ){
+	};
+	
+Three.prototype.addTerrain = function( obj ){
 		
 		var options = obj ||{};
 		
@@ -663,19 +763,12 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return this;
 		
-	}
-});
+	};
 
-})( jQuery );
-(function( $ ) {
-	
-Three.prototype  = $.extend(Three.prototype, {
-	// generic method to create an element
-	html : function(html){
+
+// generic method to create an element
+Three.prototype.html = function(html){
 		var self = this;
-		var options = {
-			
-		}; 
 		
 		// loop throught the elements of the dom
 		$(html).filter('*').each(function(i, el){
@@ -684,7 +777,9 @@ Three.prototype  = $.extend(Three.prototype, {
 			
 			// exit if there is no parent set
 			if( !$el ) return;
-		
+			
+			
+			var options = {}; 
 			// use the active scene if not specified
 			//var parent = scene || this.active.scene;
 			// get the type from the tag name
@@ -703,7 +798,7 @@ Three.prototype  = $.extend(Three.prototype, {
 		
 		});
 		
-	},
+	};
 	/*
 	htmlScene : function( html ){
 		
@@ -727,7 +822,7 @@ Three.prototype  = $.extend(Three.prototype, {
 		
 	}, 
 	*/
-	createHTML : function( options ){
+Three.prototype.createHTML = function( options ){
 		// create markup
 		var $tag = $('<'+ options.type +'>');
 		// add id
@@ -744,24 +839,21 @@ Three.prototype  = $.extend(Three.prototype, {
 		this.parent = $tag; 
 		
 		return $tag;
-	}
-	
-});
+	};
 
-})( jQuery );
-(function( $ ) {
-	
-Three.prototype = $.extend(Three.prototype, {
-	
-	
-});
 
-})( jQuery );
-(function( $ ) {
+Three.prototype.find = function( query ){ 
+		
+		var id = $(this.container).find("shadow-root "+ query).attr("data-id");
+		// find the element in the containers
+		var el = this.objects[id] || this.cameras[id] || this.scenes[id];
+		
+		return el;
+	};
 	
-Three.prototype = $.extend(Three.prototype, {
-	// generic method to create an element
-	webgl : function( options ){
+
+// generic method to create an element
+Three.prototype.webgl = function( options ){
 		// get the type from the tag name
 		//var type = html.nodeName.toLowerCase();
 		var el;
@@ -776,11 +868,23 @@ Three.prototype = $.extend(Three.prototype, {
 			case "mesh":
 				el = this.webglMesh( options );
 			break;
+			case "material":
+				el = this.webglMaterial( options );
+			break;
 			case "light":
 				el = this.webglLight( options );
 			break;
 			case "plane": 
 				el = this.webglPlane( options );
+			break;
+			case "sphere": 
+				el = this.webglSphere( options );
+			break;
+			case "cube": 
+				el = this.webglCube( options );
+			break;
+			case "cylinder": 
+				el = this.webglCylinder( options );
 			break;
 			case "terrain": 
 				el = this.webglTerrain( options );
@@ -789,9 +893,9 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return el; 
 		
-	},
+	};
 	
-	webglScene: function( options ){
+Three.prototype.webglScene = function( options ){
 		
 		var defaults = {
 			id : false
@@ -801,11 +905,14 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		var scene = new THREE.Scene();
 		
+		// save in the objects bucket 
+		this.scenes[scene.id] = scene;
+		
 		return scene;
 		
-	}, 
+	};
 	
-	webglCamera: function( attributes ){
+Three.prototype.webglCamera = function( attributes ){
 		// 
 		var camera;
 		
@@ -826,16 +933,14 @@ Three.prototype = $.extend(Three.prototype, {
 			camera = new THREE.PerspectiveCamera( options.fov, options.aspect, options.near, options.far );
 		}
 		
-		//console.log( this.active );
-		//options.scene.add( camera );
-		
 		return camera;
-	}, 
+	};
 	
-	webglMesh: function( attributes ){
+Three.prototype.webglMesh = function( attributes ){
 		var mesh;
 		var defaults = {
 			id : false, 
+			wireframe: false, 
 			scene: this.active.scene
 		}; 
 		
@@ -846,19 +951,61 @@ Three.prototype = $.extend(Three.prototype, {
 		// wireframe toggle? new THREE.MeshBasicMaterial( {color: Math.random() * 0xffffff, wireframe: true });
 		
 		return mesh;
-	}, 
+	};
 	
-	webglLight: function( attributes ){
+Three.prototype.webglMaterial = function( attributes ){
+		
+		var material, settings;
+		
+		var defaults = {
+			id : false, 
+			color: 0x000000, 
+			wireframe: false, 
+			map: false, 
+			scene: this.active.scene
+		}; 
+		
+		var options = $.extend(defaults, attributes);
+		// grab the shaders from the global space
+		var shaders = window.Shaders || {};
+		
+		// check if there is a shader with the id name
+		if( options.id && shaders[ options.id ] ){ 
+			settings = {};
+		
+			var shader = Shaders[ options.id ];
+			if( shader.uniforms )  settings.uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+			if( shader.vertexShader )  settings.vertexShader = shader.vertexShader;
+			if( shader.fragmentShader )  settings.fragmentShader = shader.fragmentShader;
+			if( options.map && shader.uniforms) settings.uniforms.texture.texture= THREE.ImageUtils.loadTexture( options.map );
+			material = new THREE.ShaderMaterial( settings );
+		
+		} else {
+			// create a basic material
+			settings = {};
+			if( options.map ) settings.map = THREE.ImageUtils.loadTexture( options.map );
+			if( options.color && !options.map ) settings.color = options.color;
+			if( options.wireframe ) settings.wireframe = options.wireframe;
+			material = new THREE.MeshBasicMaterial( settings );
+		
+		}
+		
+		return material; 
+
+	};
+	
+Three.prototype.webglLight = function( attributes ){
 		//var light 
 		//return light;
-	}, 
+	};
 	
-	webglPlane: function( attributes ){
+Three.prototype.webglPlane = function( attributes ){
 		// plane - by default a 1x1 square
 		var defaults = {
 			width: 1,
 			height: 1,
 			color: 0x000000, 
+			wireframe: false, 
 			scene: this.active.scene
 		};
 		
@@ -867,22 +1014,17 @@ Three.prototype = $.extend(Three.prototype, {
 		var geometry = new THREE.PlaneGeometry( options.width, options.height );
 		// make this optional?
 		geometry.dynamic = true;
-		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
 		var mesh = new THREE.Mesh( geometry, material );
 		
 		// set attributes
-		if( options.id ) mesh.name = id;
-		
-		// save in the objects bucket 
-		this.objects[mesh.id] = mesh;
-		
-		options.scene.add( mesh );
+		if( options.id ) mesh.name = options.id;
 		
 		return mesh;
 		
-	}, 
+	};
 	
-	webglSphere: function( attributes ){
+Three.prototype.webglSphere = function( attributes ){
 		
 		var defaults = {
 			id : false, 
@@ -890,30 +1032,27 @@ Three.prototype = $.extend(Three.prototype, {
 			segments : 16,
 			rings : 16, 
 			color: 0x000000, 
+			wireframe: false, 
+			map: false, 
 			scene: this.active.scene
 		}; 
 		
 		var options = $.extend(defaults, attributes);
 		
-		var geometry = new SphereGeometry( options.radius, options.segments, options.rings);
+		var geometry = new THREE.SphereGeometry( options.radius, options.segments, options.rings);
 		// make this optional?
+		//geometry.overdraw = true;
 		geometry.dynamic = true;
-		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var material = this.webglMaterial( options );
 		var mesh = new THREE.Mesh( geometry, material );
-		
+		mesh.matrixAutoUpdate = false;
 		// set attributes
-		if( options.id ) mesh.name = id;
-		
-		// save in the objects bucket 
-		this.objects[mesh.id] = mesh;
-		
-		// add to scene
-		options.scene.add( mesh );
+		if( options.id ) mesh.name = options.id;
 		
 		return mesh;
-	}, 
+	};
 	
-	webglCube: function( attributes ){
+Three.prototype.webglCube = function( attributes ){
 		
 		var defaults = {
 			id : false, 
@@ -921,30 +1060,25 @@ Three.prototype = $.extend(Three.prototype, {
 			height : 1, 
 			depth : 1, 
 			color: 0x000000, 
+			wireframe: false, 
 			scene: this.active.scene
 		}; 
 		
 		var options = $.extend(defaults, attributes);
 		
-		var geometry = new CubeGeometry( options.width, options.height, options.depth);
+		var geometry = new THREE.CubeGeometry( options.width, options.height, options.depth);
 		// make this optional?
 		geometry.dynamic = true;
-		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
 		var mesh = new THREE.Mesh( geometry, material );
 		
 		// set attributes
-		if( options.id ) mesh.name = id;
-		
-		// save in the objects bucket 
-		this.objects[mesh.id] = mesh;
-		
-		// add to scene
-		options.scene.add( mesh );
+		if( options.id ) mesh.name = options.id;
 		
 		return mesh;
-	}, 
+	};
 	
-	webglCylinder: function( attributes ){
+Three.prototype.webglCylinder = function( attributes ){
 		
 		var defaults = {
 			id : false, 
@@ -954,32 +1088,27 @@ Three.prototype = $.extend(Three.prototype, {
 			segmentsHeight : 50, 
 			openEnded : 50, 
 			color: 0x000000, 
+			wireframe: false, 
 			scene: this.active.scene
 		}; 
 		
 		var options = $.extend(defaults, attributes);
 		
-		var geometry = new CylinderGeometry( options.radiusTop, options.radiusBottom, options.segmentsRadius, options.segmentsHeight, options.openEnded, false);
+		var geometry = new THREE.CylinderGeometry( options.radiusTop, options.radiusBottom, options.segmentsRadius, options.segmentsHeight, options.openEnded, false);
 		// make this optional?
 		//geometry.overdraw = true;
         geometry.dynamic = true;
-		var material = new THREE.MeshBasicMaterial( { color: options.color } );
+		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
 		var mesh = new THREE.Mesh( geometry, material );
 		
 		// set attributes
-		if( options.id ) mesh.name = id;
-		
-		// save in the objects bucket 
-		this.objects[mesh.id] = mesh;
-		
-		// add to scene
-		options.scene.add( mesh );
+		if( options.id ) mesh.name = options.id;
 		
 		return mesh;
 	
-	}, 
+	}; 
 	
-	webglTerrain: function( attributes ){
+Three.prototype.webglTerrain = function( attributes ){
 		// assuming that terrain is generated from a heightmap - support class="mesh" in the future? 
 		var terrain;
 		
@@ -1000,7 +1129,6 @@ Three.prototype = $.extend(Three.prototype, {
 		plane.computeFaceNormals();
 		plane.computeVertexNormals();
 		plane.computeTangents();
-
 
 		//
 		
@@ -1068,16 +1196,9 @@ Three.prototype = $.extend(Three.prototype, {
 		
 		return terrain;
 		
-	}
-	
-});
+	};
 
-})( jQuery );
-(function( $ ) {
-
-Three.prototype = $.extend(Three.prototype, {
-
-	colorToHex : function (color) {
+Three.prototype.colorToHex = function (color) {
 		if (color.substr(0, 1) === '#') {
 			return color.replace("#", "0x");
 		}
@@ -1094,37 +1215,14 @@ Three.prototype = $.extend(Three.prototype, {
 		if(blue.length == 1) blue = "0"+blue;
 		
 		return '0x' + red + green + blue;
-	}, 
+	};
 	
-	getAttributes: function( html ){
-		// create a dom node from the markup
-		var div = document.createElement('div');
-		div.innerHTML = html;
-		var el = div.firstChild ;
-		// get attributes
-		var attr = el.attributes;
-		var data={};
-		// filter only the ones with the data- prefix
-		for( var i in attr ){
-			if( attr[i].name && attr[i].name.search("data-") === 0 ){
-				var key = attr[i].name.replace("data-", "");
-				var val = attr[i].value;
-				// check if it's a number...
-				data[key] = ( parseInt(val, 10) ) ? parseInt(val, 10) :  val;
-			}
-		}
-		
-		return data;
-	}, 
-	
-	setProperties: function() {
+Three.prototype.setProperties = function() {
 		return {
 			width: $(this.container).width(),
 			height: $(this.container).height(),
 			aspect: ( $(this.container).width() / $(this.container).height() )
 		};
-	}
+	};
 	
-});
-
 })( jQuery );
