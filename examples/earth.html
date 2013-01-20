@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-		<title>jQuery Three :: Skybox</title>
+		<title>jQuery Three :: Earth</title>
 		<meta charset="utf-8">
         
 		<style type="text/css">
@@ -13,14 +13,23 @@
 			}
 			
 			scene {
-				background-image: url(assets/img/skybox/bluesky/px.jpg), url(assets/img/skybox/bluesky/nx.jpg), url(assets/img/skybox/bluesky/py.jpg), url(assets/img/skybox/bluesky/ny.jpg), url(assets/img/skybox/bluesky/pz.jpg), url(assets/img/skybox/bluesky/nz.jpg);
+				background-image: url(assets/img/skybox/stars/px.jpg), url(assets/img/skybox/stars/nx.jpg), url(assets/img/skybox/stars/py.jpg), url(assets/img/skybox/stars/ny.jpg), url(assets/img/skybox/stars/pz.jpg), url(assets/img/skybox/stars/nz.jpg);
 			}
 			
 			#main-cam {
-				-webkit-transform: translate3d( 0, 0, 2000px);
+				-webkit-transform: translate3d(0, 0, 1000px);	
 				/* -webkit-backface-visibility: hidden;
   				-webkit-perspective: 1000; */
 			}
+			
+			.moon {
+				background-image: url(assets/img/maps/moon_1k.jpg);
+			}
+			
+			.earth {
+				background-image: url(assets/img/maps/earth_1k.jpg);
+			}
+			
 		</style>
 
 	</head>
@@ -29,7 +38,8 @@
     
 		<div id="main">
         	<scene id="first">
-            	<camera id="main-cam" class="perspective" data-far="5000"></camera>
+            	<camera id="main-cam" class="perspective" data-fov="30" data-far="4000"></camera>
+                 <sphere class="moon" data-radius="200" data-segments="40" data-rings="30"></sphere>
             </scene>
         </div>
         
