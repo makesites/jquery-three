@@ -121,8 +121,7 @@ Three.prototype = {
 		}, false );
 		
 		// #31 - live watching DOM updates
-		if( this.options.watch )
-			$(this.container).bind('DOMSubtreeModified', this.watch);
+		if( this.options.watch ) this.watch(this.container);
 		
 		this.tick();
 		
@@ -423,6 +422,15 @@ fn.css = {
 							object.rotation.set( pos.x, pos.y, pos.z );
 						}
 					}
+					if(css[attr].search("scale3d") > -1 ){ 
+						pos = this.fn.css.scale.call( this, css[attr] );
+						// condition the position for "bare" meshes
+						if( object instanceof THREE.Mesh && object.type != "terrain"){
+							object.parent.scale.set( pos.x, pos.y, pos.z );
+						} else {
+							object.scale.set( pos.x, pos.y, pos.z );
+						}
+					}
 				break;
 				// - animation
 				case "animation-duration":
@@ -477,9 +485,9 @@ fn.css = {
 			val = val[0].replace(/rotate3d\(|deg|\)| /gi, "").split(",");
 			// first three numbers toggle axis application - fourth is the degrees
 			rot = {
-				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 ) : 0,
-				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 ) : 0,
-				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 ) : 0
+				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0,
+				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0,
+				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0
 			};
 			
 		}
@@ -507,6 +515,28 @@ fn.css = {
 		}
 		
 		return pos;
+		
+	}, 
+	
+	scale: function( attr ){
+		
+		var size = {};
+		// only supporting rotate3d for now...
+		if( attr.search("scale3d") > -1 ){
+			// replace all the bits we don't need
+			var val = attr.match(/scale3d\(([\s\S]*?)\)/gi);
+			// match returns array...
+			val = val[0].replace(/scale3d\(|\)| /gi, "").split(",");
+			// first three numbers toggle axis application - fourth is the degrees
+			size = {
+				x: parseInt( val[0], 10 ) || 0,
+				y: parseInt( val[1], 10 ) || 0,
+				z: parseInt( val[2], 10 ) || 0
+			};
+			
+		}
+		
+		return size;
 		
 	}, 
 	
@@ -538,8 +568,6 @@ fn.css = {
 		
 				}
 				if( img[i].search("diffuse") > -1  ){
-					
-					console.log( img[i] );
 					
 					var diffuseTexture1 = THREE.ImageUtils.loadTexture( img[i] );
 					//var diffuseTexture1 = this.webglTexture( img[i] );
@@ -643,13 +671,41 @@ Three.prototype.animate = function(){
 		
 	};
 
-Three.prototype.watch = function(e) {
-	console.log(e);
+// watch an element for changes
+Three.prototype.watch = function( el ) {
+	// monitor new elements 
+	$( el ).bind('DOMSubtreeModified', this.eventSubtree);
+	// monitor attribute changes
+	if (el.onpropertychange){
+		$( el ).bind( 'propertychange', this.eventAttribute );
+	}
+	else {
+		$( el ).bind( 'DOMAttrModified', this.eventAttribute );
+	}
+	// monitor css style changes
+	
+	
+};
+
+// - new element
+Three.prototype.eventSubtree = function(e) {
+	
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
 		console.log( e.target.innerHTML );
 	}
 };
+
+// - updated attribute
+Three.prototype.eventAttribute = function(e) {
+	
+	console.log("attribute",  e.target );
+	
+};
+
+// - updated style(s)
+
+
 
 // generic method to add an element
 Three.prototype.add = function( options ){
@@ -948,6 +1004,10 @@ Three.prototype.createHTML = function( options ){
 		if(options.type == "scene" || options.type == "asset" || options.type == "player"){
 			this.parent = $tag; 
 		}
+		
+		// add listening events (if enabled)
+		//if(this.options.watch) this.watch($tag);
+		
 		return $tag;
 	};
 
@@ -1234,7 +1294,7 @@ Three.prototype.webglCylinder = function( attributes ){
 			radiusBottom : 100, 
 			segmentsRadius : 400, 
 			segmentsHeight : 50, 
-			openEnded : 50, 
+			openEnded : false, 
 			color: 0x000000, 
 			wireframe: false, 
 			scene: this.active.scene

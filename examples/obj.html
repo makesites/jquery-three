@@ -16,7 +16,8 @@
 			}
 			
 			.tree {
-				/*background-image: url( 'assets/3d/palm/palm_bark.png' ), url( 'assets/3d/palm/palm_leafs.png' );*/
+				/*background-image: url( 'assets/3d/palm/palm_bark.png' ), url( 'assets/3d/palm/palm_leafs.png' );
+				-webkit-transform: scale3d( 100, 100, 100);*/
 			}
 			
 			#main-cam {
@@ -33,7 +34,7 @@
 		<div id="main">
         	<scene id="first">
             	<camera id="main-cam" class="perspective" data-far="2000"></camera>
-                <obj src="assets/3d/dreampalm/palm.obj" data-mtl="assets/3d/dreampalm/palm.mtl"></obj>
+                <obj class="tree" src="assets/3d/tree/tree.obj" data-mtl="assets/3d/tree/tree.mtl"></obj>
             </scene>
         </div>
         

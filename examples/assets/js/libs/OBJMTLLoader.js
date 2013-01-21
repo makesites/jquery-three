@@ -123,7 +123,7 @@ THREE.OBJMTLLoader.prototype = {
 				// Apply materials to model
 
 				if ( materialsCreator ) {
-
+console.log(obj3d);
 					obj3d.traverse( function( object ) {
 
 						if ( object instanceof THREE.Mesh ) {
