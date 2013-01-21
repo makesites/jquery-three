@@ -17,9 +17,13 @@ camera {
 }
 
 .moon {
-	background-image: url(assets/img/moon_1024.jpg);
+	background-image: url(assets/img/maps/moon_1k.jpg);
 }
 
+.stars {
+	background-image: url(assets/img/skybox/stars/px.jpg), url(assets/img/skybox/stars/nx.jpg), url(assets/img/skybox/stars/py.jpg), url(assets/img/skybox/stars/ny.jpg), url(assets/img/skybox/stars/pz.jpg), url(assets/img/skybox/stars/nz.jpg);
+}
+			
 
 </style>
 </head>
@@ -27,9 +31,9 @@ camera {
 
 <div id="main">
 <div class="fallback">No WebGL detected</div>
-<scene>
+<scene class="stars">
     <camera data-fov="30" data-far="1000"></camera>
-    <sphere class="moon" data-radius="200" data-segments="40" data-rings="30" data-map="/examples/assets/img/moon_1024.jpg"></sphere>
+    <sphere class="moon" data-radius="200" data-segments="40" data-rings="30"></sphere>
 </scene>
 </div>
 
@@ -173,7 +177,7 @@ var rotationMatrix
 function rotateAroundObjectAxis( object, axis, radians ) {
     rotationMatrix = new THREE.Matrix4();
     rotationMatrix.makeRotationAxis( axis.normalize(), radians );
-    object.matrix.multiplySelf( rotationMatrix );                       // post-multiply
+    object.matrix.multiply( rotationMatrix );                       // post-multiply
     object.rotation.setEulerFromRotationMatrix(object.matrix, object.order);
 }
  
@@ -182,7 +186,7 @@ var rotWorldMatrix;
 function rotateAroundWorldAxis( object, axis, radians ) {
     rotWorldMatrix = new THREE.Matrix4();
     rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-    rotWorldMatrix.multiplySelf(object.matrix);        // pre-multiply
+    rotWorldMatrix.multiply(object.matrix);        // pre-multiply
     object.matrix = rotWorldMatrix;
 	object.rotation.setEulerFromRotationMatrix(object.matrix, object.order);
 } 
