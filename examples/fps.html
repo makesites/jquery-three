@@ -1,571 +1,88 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-		<title>jQuery Three :: FPS Camera</title>
+		<title>jQuery Three :: Earth</title>
 		<meta charset="utf-8">
+        
 		<style type="text/css">
-			body {
-				background: #000;
-				color: #999;
-				padding: 0;
-				margin: 0;
-				overflow: hidden;
-				font-family: georgia;
-				font-size:1em;
-				text-align: center;
+			body, html{ margin: 0; padding: 0; width: 100%; height: 100%; }
+			
+			#main {
+				width: 100%; 
+				height: 100%;
 			}
-
-			#info { margin-top: 2em	}
-
-			a { color: #fb0; }
-
-			#footer { width: 100%; margin: 2em auto; text-align: center; position: absolute; bottom: 0 }
-			.h { color: #fb0 }
-			.c { display: inline; margin-left: 1em }
-
-			#loading { width: 100%; margin: 2em auto; text-align: center; position: absolute; top: 25em  }
-
-			#oldie a { color:#da0 }
+			
+			#main-cam {
+				-webkit-transform: translate3d(0, 1px, 0);	
+				/* -webkit-backface-visibility: hidden;
+  				-webkit-perspective: 1000; */
+			}
+			
+			plane {
+				color: #eef;
+				width: 10000px;
+				height: 10000px;
+				-webkit-transform: translate3d(0, -1px, 0) rotate3d(1, 0, 0, -90deg);	
+				
+			}
+			
+			.box {
+				color: #999;
+				width: 1px;
+				height: 1px;
+				background-image: url("assets/img/1m_grid.jpg")
+			}
+			
+			
 		</style>
+
 	</head>
 
 	<body>
-		<div id="container"></div>
-
-		<div id="loading">Loading...</div>
-
-		<div id="footer">
-			<div class="c">
-			day / night: <span class="h">n</span>
-			</div>
-
-		</div>
-
-		<script type="text/javascript" src="js/Three.js"></script>
-        <script src="https://github.com/tracend/three.js/raw/master/examples/js/controls/PointerLockControls.js"></script>
-        <!-- script type="text/javascript" src="https://github.com/mrdoob/three.js/raw/master/examples/js/controls/FirstPersonControls.js"></script>
-		<script src="js/controls/TrackballControls.js"></script -->
-
-		<script src="js/shaders/BleachBypassShader.js"></script>
-		<script src="js/shaders/ConvolutionShader.js"></script>
-		<script src="js/shaders/CopyShader.js"></script>
-		<script src="js/shaders/HorizontalTiltShiftShader.js"></script>
-		<script src="js/shaders/LuminosityShader.js"></script>
-		<script src="js/shaders/NormalMapShader.js"></script>
-		<script src="js/shaders/VerticalTiltShiftShader.js"></script>
-
-		<script src="js/postprocessing/EffectComposer.js"></script>
-		<script src="js/postprocessing/RenderPass.js"></script>
-		<script src="js/postprocessing/BloomPass.js"></script>
-		<script src="js/postprocessing/ShaderPass.js"></script>
-		<script src="js/postprocessing/MaskPass.js"></script>
-		<script src="js/postprocessing/SavePass.js"></script>
-
-		<script type="text/javascript" src="js/ShaderTerrain.js"></script>
-
-		<script src="js/Detector.js"></script>
-
-		<script id="vertexShader" type="x-shader/x-vertex">
-
-			varying vec2 vUv;
-			uniform vec2 scale;
-			uniform vec2 offset;
-
-			void main( void ) {
-
-				vUv = uv * scale + offset;
-				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
-			}
-
+    
+		<div id="main">
+        	<scene id="first">
+            	<camera id="main-cam" class="perspective" data-fov="30" data-far="8000"></camera>
+                <plane></plane>
+            </scene>
+        </div>
+        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
+		<script type="text/javascript" src="assets/js/helpers/walkaround.js"></script>
+		<script type="text/javascript" src="../build/jquery.three.js"></script>
+        
+		<script id="box-template" type="text/x-handlebars-template">
+            <cube class="box" style="-webkit-transform: translate3d({{random 10}}, 0, {{random 10}})"></cube>
+        </script>
+        <script type="text/javascript"> 
+			
+			// load template
+			var template = Handlebars.compile( $("#box-template").html() );
+			
+			// initiate 3d environemnt
+			$("#main").three({
+				"deps" : {
+					"FirstPersonControls" : "https://raw.github.com/mrdoob/three.js/master/examples/js/controls/FirstPersonControls.js"
+				}
+			}, function( $3d ){
+				
+				// repead 100 times
+				for( var i=0; i < 100; i++){
+					var html = template({});
+					$3d.append( html );
+				}
+				WalkAround.init( $3d );
+			});
+			
+			// add event listener
+			$("#main").on("update", WalkAround.update);
+				
+			
+			Handlebars.registerHelper("random", function(num){
+				return (Math.round( num * (Math.random() - 0.5 ) )*4) +"px";
+			});
 		</script>
-
-		<script>
-
-			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
-			var MARGIN = 100;
-
-			var SCREEN_WIDTH = window.innerWidth;
-			var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
-
-			var renderer, container;
-
-			var camera, scene;
-			var cameraOrtho, sceneRenderTarget;
-
-			var uniformsNormal,
-				heightMap, normalMap,
-				quadTarget;
-
-			var directionalLight, pointLight;
-
-			var terrain, ray;
-
-			var textureCounter = 0;
-
-			var animDelta = 0, animDeltaDir = -1;
-			var lightVal = 0, lightDir = 1;
-			var soundVal = 0, oldSoundVal = 0, soundDir = 1;
-
-			var clock = new THREE.Clock();
-
-			var morph, morphs = [];
-
-			var updateNoise = true;
-
-			var animateTerrain = false;
-
-			var textMesh1;
-
-			var mlib = {};
-
-			init();
-			animate();
-
-			function init() {
-
-				container = document.getElementById( 'container' );
-
-				// SCENE (RENDER TARGET)
-
-				sceneRenderTarget = new THREE.Scene();
-
-				cameraOrtho = new THREE.OrthographicCamera( SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10000, 10000 );
-				cameraOrtho.position.z = 100;
-
-				sceneRenderTarget.add( cameraOrtho );
-
-				// CAMERA
-
-				camera = new THREE.PerspectiveCamera( 40, SCREEN_WIDTH / SCREEN_HEIGHT, 2, 4000 );
-				camera.position.set( -1200, 800, 1200 );
-				
-				controls = new THREE.PointerLockControls( camera );
-				sceneRenderTarget.add( controls.getObject() );
-				
-				controls.enabled = true;
-				
-				ray = new THREE.Ray();
-				ray.direction.set( 0, -1, 0 );
-
-				/*
-				controls = new THREE.FirstPersonControls( camera );
-
-                controls.movementSpeed = 70;
-                controls.lookSpeed = 0.05;
-                controls.noFly = true;
-                controls.lookVertical = false;
-				
-				
-				controls = new THREE.TrackballControls( camera );
-				controls.target.set( 0, 0, 0 );
-
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
-
-				controls.noZoom = false;
-				controls.noPan = false;
-
-				controls.staticMoving = false;
-				controls.dynamicDampingFactor = 0.15;
-
-				controls.keys = [ 65, 83, 68 ];
-				*/
-				// SCENE (FINAL)
-
-				scene = new THREE.Scene();
-				scene.fog = new THREE.Fog( 0x050505, 2000, 4000 );
-				scene.fog.color.setHSV( 0.102, 0.9, 0.825 );
-
-				// LIGHTS
-
-				scene.add( new THREE.AmbientLight( 0x111111 ) );
-
-				directionalLight = new THREE.DirectionalLight( 0xffffff, 1.15 );
-				directionalLight.position.set( 500, 2000, 0 );
-				scene.add( directionalLight );
-
-				pointLight = new THREE.PointLight( 0xff4400, 1.5 );
-				pointLight.position.set( 0, 0, 0 );
-				scene.add( pointLight );
-
-
-				// HEIGHT + NORMAL MAPS
-
-				var normalShader = THREE.NormalMapShader;
-
-				var rx = 256, ry = 256;
-				var pars = { minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat };
-
-				heightMap  = new THREE.WebGLRenderTarget( rx, ry, pars );
-				normalMap = new THREE.WebGLRenderTarget( rx, ry, pars );
-
-				uniformsNormal = THREE.UniformsUtils.clone( normalShader.uniforms );
-
-				uniformsNormal.height.value = 0.05;
-				uniformsNormal.resolution.value.set( rx, ry );
-				uniformsNormal.heightMap.value = heightMap;
-
-				var vertexShader = document.getElementById( 'vertexShader' ).textContent;
-
-				// TEXTURES
-
-				var specularMap = new THREE.WebGLRenderTarget( 2048, 2048, pars );
-
-				var diffuseTexture1 = THREE.ImageUtils.loadTexture( "assets/terrain.png", null, function () {
-
-					loadTextures();
-					applyShader( THREE.LuminosityShader, diffuseTexture1, specularMap );
-
-				} );
-
-				var diffuseTexture2 = THREE.ImageUtils.loadTexture( "assets/terrain.png", null, loadTextures );
-				var detailTexture = THREE.ImageUtils.loadTexture( "assets/bg.jpg", null, loadTextures );
-
-				diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-				diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-				detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-				specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
-
-				// TERRAIN SHADER
-
-				var terrainShader = THREE.ShaderTerrain[ "terrain" ];
-
-				uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
-
-				uniformsTerrain[ "tNormal" ].value = detailTexture;
-				uniformsTerrain[ "uNormalScale" ].value = 1;
-
-				uniformsTerrain[ "tDisplacement" ].value = diffuseTexture1;
-
-				uniformsTerrain[ "tDiffuse1" ].value = diffuseTexture1;
-				uniformsTerrain[ "tDiffuse2" ].value = diffuseTexture2;
-				uniformsTerrain[ "tSpecular" ].value = specularMap;
-				uniformsTerrain[ "tDetail" ].value = detailTexture;
-
-				uniformsTerrain[ "enableDiffuse1" ].value = true;
-				uniformsTerrain[ "enableDiffuse2" ].value = true;
-				uniformsTerrain[ "enableSpecular" ].value = true;
-
-				uniformsTerrain[ "uDiffuseColor" ].value.setHex( 0xffffff );
-				uniformsTerrain[ "uSpecularColor" ].value.setHex( 0xffffff );
-				uniformsTerrain[ "uAmbientColor" ].value.setHex( 0x111111 );
-
-				uniformsTerrain[ "uShininess" ].value = 30;
-
-				uniformsTerrain[ "uDisplacementScale" ].value = 0; //375
-
-				uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
-
-				var params = [
-								[ 'heightmap', 	terrainShader.fragmentShader, 	terrainShader.vertexShader, uniformsTerrain, false ],
-								[ 'normal', 	normalShader.fragmentShader,  normalShader.vertexShader, uniformsNormal, false ],
-								[ 'terrain', 	terrainShader.fragmentShader, terrainShader.vertexShader, uniformsTerrain, true ]
-							 ];
-
-				for( var i = 0; i < params.length; i ++ ) {
-
-					material = new THREE.ShaderMaterial( {
-
-						uniforms: 		params[ i ][ 3 ],
-						vertexShader: 	params[ i ][ 2 ],
-						fragmentShader: params[ i ][ 1 ],
-						lights: 		params[ i ][ 4 ],
-						fog: 			true
-						} );
-
-					mlib[ params[ i ][ 0 ] ] = material;
-
-				}
-
-
-				var plane = new THREE.PlaneGeometry( SCREEN_WIDTH, SCREEN_HEIGHT );
-
-				quadTarget = new THREE.Mesh( plane, new THREE.MeshBasicMaterial( { color: 0x000000 } ) );
-				quadTarget.position.z = -500;
-				sceneRenderTarget.add( quadTarget );
-
-				// TERRAIN MESH
-
-				var geometryTerrain = new THREE.PlaneGeometry( 6000, 6000, 256, 256 );
-
-				geometryTerrain.computeFaceNormals();
-				geometryTerrain.computeVertexNormals();
-				geometryTerrain.computeTangents();
-
-				terrain = new THREE.Mesh( geometryTerrain, mlib[ "terrain" ] );
-				terrain.position.set( 0, -125, 0 );
-				terrain.rotation.x = -Math.PI / 2;
-				terrain.visible = false;
-				scene.add( terrain );
-
-				// RENDERER
-
-				renderer = new THREE.WebGLRenderer();
-				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
-				renderer.setClearColor( scene.fog.color, 1 );
-
-				renderer.domElement.style.position = "absolute";
-				renderer.domElement.style.top = MARGIN + "px";
-				renderer.domElement.style.left = "0px";
-
-				container.appendChild( renderer.domElement );
-
-				//
-
-				renderer.gammaInput = true;
-				renderer.gammaOutput = true;
-
-
-				// EVENTS
-
-				onWindowResize();
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
-				document.addEventListener( 'keydown', onKeyDown, false );
-
-				// COMPOSER
-
-				renderer.autoClear = false;
-
-				renderTargetParameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
-				renderTarget = new THREE.WebGLRenderTarget( SCREEN_WIDTH, SCREEN_HEIGHT, renderTargetParameters );
-
-				effectBloom = new THREE.BloomPass( 0.6 );
-				var effectBleach = new THREE.ShaderPass( THREE.BleachBypassShader );
-
-				hblur = new THREE.ShaderPass( THREE.HorizontalTiltShiftShader );
-				vblur = new THREE.ShaderPass( THREE.VerticalTiltShiftShader );
-
-				var bluriness = 6;
-
-				hblur.uniforms[ 'h' ].value = bluriness / SCREEN_WIDTH;
-				vblur.uniforms[ 'v' ].value = bluriness / SCREEN_HEIGHT;
-
-				hblur.uniforms[ 'r' ].value = vblur.uniforms[ 'r' ].value = 0.5;
-
-				effectBleach.uniforms[ 'opacity' ].value = 0.65;
-
-				composer = new THREE.EffectComposer( renderer, renderTarget );
-
-				var renderModel = new THREE.RenderPass( scene, camera );
-
-				vblur.renderToScreen = true;
-
-				composer = new THREE.EffectComposer( renderer, renderTarget );
-
-				composer.addPass( renderModel );
-
-				composer.addPass( effectBloom );
-				//composer.addPass( effectBleach );
-
-				composer.addPass( hblur );
-				composer.addPass( vblur );
-
-				// MORPHS
-
-				function addMorph( geometry, speed, duration, x, y, z ) {
-
-					var material = new THREE.MeshLambertMaterial( { color: 0xffaa55, morphTargets: true, vertexColors: THREE.FaceColors } );
-
-					var meshAnim = new THREE.MorphAnimMesh( geometry, material );
-
-					meshAnim.speed = speed;
-					meshAnim.duration = duration;
-					meshAnim.time = 600 * Math.random();
-
-					meshAnim.position.set( x, y, z );
-					meshAnim.rotation.y = Math.PI/2;
-
-					meshAnim.castShadow = true;
-					meshAnim.receiveShadow = false;
-
-					scene.add( meshAnim );
-
-					morphs.push( meshAnim );
-
-					renderer.initWebGLObjects( scene );
-
-				}
-
-				function morphColorsToFaceColors( geometry ) {
-
-					if ( geometry.morphColors && geometry.morphColors.length ) {
-
-						var colorMap = geometry.morphColors[ 0 ];
-
-						for ( var i = 0; i < colorMap.colors.length; i ++ ) {
-
-							geometry.faces[ i ].color = colorMap.colors[ i ];
-
-						}
-
-					}
-
-				}
-
-				// PRE-INIT
-
-				renderer.initWebGLObjects( scene );
-
-			}
-
-			//
-
-			function onWindowResize( event ) {
-
-				SCREEN_WIDTH = window.innerWidth;
-				SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
-
-				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
-
-				camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-				camera.updateProjectionMatrix();
-
-			}
-
-			//
-
-			function onKeyDown ( event ) {
-
-				switch( event.keyCode ) {
-
-					case 78: /*N*/  lightDir *= -1; break;
-					case 77: /*M*/  animDeltaDir *= -1; break;
-					case 66: /*B*/  soundDir *= -1; break;
-
-				}
-
-			};
-
-			//
-
-			function applyShader( shader, texture, target ) {
-
-				var shaderMaterial = new THREE.ShaderMaterial( {
-
-					fragmentShader: shader.fragmentShader,
-					vertexShader: shader.vertexShader,
-					uniforms: THREE.UniformsUtils.clone( shader.uniforms )
-
-				} );
-
-				shaderMaterial.uniforms[ "tDiffuse" ].value = texture;
-
-				var sceneTmp = new THREE.Scene();
-
-				var meshTmp = new THREE.Mesh( new THREE.PlaneGeometry( SCREEN_WIDTH, SCREEN_HEIGHT ), shaderMaterial );
-				meshTmp.position.z = -500;
-
-				sceneTmp.add( meshTmp );
-
-				renderer.render( sceneTmp, cameraOrtho, target, true );
-
-			};
-
-			//
-
-			function loadTextures() {
-
-				textureCounter += 1;
-
-				if ( textureCounter == 3 )	{
-
-					terrain.visible = true;
-
-					document.getElementById( "loading" ).style.display = "none";
-
-				}
-
-			}
-
-			//
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				render();
-
-			}
-
-			function render() {
-
-				var delta = clock.getDelta();
-
-				soundVal = THREE.Math.clamp( soundVal + delta * soundDir, 0, 1 );
-
-				//if ( terrain.visible ) {
-
-					//controls.update();
-
-				controls.isOnObject( false );
-
-				ray.origin.copy( controls.getObject().position );
-				ray.origin.y -= 10;
-
-				var intersections = ray.intersectObjects( terrain );
-
-				if ( intersections.length > 0 ) {
-
-					var distance = intersections[ 0 ].distance;
-
-					if ( distance > 0 && distance < 10 ) {
-
-						controls.isOnObject( true );
-
-					}
-
-				}
-
-				controls.update( Date.now() - time );
-
-					var time = Date.now() * 0.001;
-
-					var fLow = 0.4, fHigh = 0.825;
-
-					lightVal = THREE.Math.clamp( lightVal + 0.5 * delta * lightDir, fLow, fHigh );
-
-					var valNorm = ( lightVal - fLow ) / ( fHigh - fLow );
-
-					var sat = THREE.Math.mapLinear( valNorm, 0, 1, 0.95, 0.25 );
-					scene.fog.color.setHSV( 0.1, sat, lightVal );
-
-					renderer.setClearColor( scene.fog.color, 1 );
-
-					directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
-					pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
-
-					uniformsTerrain[ "uNormalScale" ].value = THREE.Math.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
-/*
-					for ( var i = 0; i < morphs.length; i ++ ) {
-
-						morph = morphs[ i ];
-
-						morph.updateAnimation( 1000 * delta );
-
-						morph.position.x += morph.speed * delta;
-
-						if ( morph.position.x  > 2000 )  {
-
-							morph.position.x = -1500 - Math.random() * 500;
-
-						}
-
-
-					}
-*/
-					//renderer.render( scene, camera );
-					composer.render( 0.1 );
-
-				//}
-
-			}
-
-		</script>
-
+        
 	</body>
 </html>
