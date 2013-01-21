@@ -1,6 +1,6 @@
 ## jQuery Three 
 
-A plugin - extension of the jQuery API for 3d objects (using Three.js) 
+A plugin / extension of the jQuery API for 3d objects (using Three.js) 
 
 
 ## Introduction 
@@ -25,12 +25,12 @@ Enable 3D actions on any container using:
 $("container").three( options, callback );
 ```
 
-Read the [wiki](wiki) docs for more details on the [methods](wiki/Methods) and [tag support](wiki/Tags).
+Read the [wiki](https://github.com/makesites/jquery-three/wiki) docs for more details on the [methods](https://github.com/makesites/jquery-three/wiki/Methods) and [tag support](https://github.com/makesites/jquery-three/wiki/Tags).
 
 
 ## Credits
 
-Created by [Makis Tracend](http://github.com/tracend)
+Created by [Makis Tracend](http://github.com/tracend) [full list of contributors](https://github.com/makesites/jquery-three/graphs/contributors)
 
 Distributed through [Makesites.org](http://makesites.org)
 
