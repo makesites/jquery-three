@@ -30,7 +30,7 @@ Read the [wiki](https://github.com/makesites/jquery-three/wiki) docs for more de
 
 ## Credits
 
-Created by [Makis Tracend](http://github.com/tracend) [full list of contributors](https://github.com/makesites/jquery-three/graphs/contributors)
+Created by [Makis Tracend](http://github.com/tracend) [ [full list of contributors](https://github.com/makesites/jquery-three/graphs/contributors) ]
 
 Distributed through [Makesites.org](http://makesites.org)
 
