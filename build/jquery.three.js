@@ -2,7 +2,7 @@
 * jQuery Three() - jQuery extension with 3D methods (using Three.js)
 * Created by: Makis Tracend (@tracend)
 *
-* Copyright © 2012 Makesites.org
+* Copyright © 2013 Makesites.org
 * Licensed under the MIT license
 *
 **/
@@ -19,17 +19,46 @@ window.requestAnimFrame = ( function( callback ) {
 	};
 })();
 
-(function( $ ) {
+(function (factory) {
+ 
+	"use strict";
+	
+	var define = define || false;
+	var jQuery = jQuery || false;
+	
+    if (define && typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery'], factory);
+    } else {
+        // Browser globals
+        factory( jQuery );
+    }
+}(function ( jQuery ) {
+
+// Local variables
+var css, _css;
+
+// Create a fn container for internal methods
+var fn = {
+		self : function(){ return this; }
+	};
 
 
 	var defaults = {
+		watch : false, 
+		//deps : { "THREE" : "http://cdnjs.cloudflare.com/ajax/libs/three.js/r54/three.min.js" }
+		deps : { 
+			"THREE" : "https://raw.github.com/mrdoob/three.js/master/build/three.min.js"
+			//"FresnelShader" : ""
+		}
+		
 	};
 	
 	Three = function( obj, options, callback ){
 		
 		var self = this;
 		this.container = obj;
-		this.options = $.extend(defaults, options);
+		this.options = $.extend(true, defaults, options);
 		// main buckets
 		this.objects = {};
 		this.scenes = {};
@@ -41,7 +70,7 @@ window.requestAnimFrame = ( function( callback ) {
 		
 		// Dependencies (replace with AMD module?)
 		this.dependencies( function () {
-			self.init( options );
+			self.init();
 			// execute callback
 			if( callback instanceof Function ) callback( self );
 		
@@ -50,10 +79,9 @@ window.requestAnimFrame = ( function( callback ) {
 };
 
 Three.prototype = {
-	init : function( options ) {
+	init : function() {
 		
 		var self = this;
-		var settings = $.extend( defaults, options );
 		// create active object
 		this.active = {
 			scene: false,
@@ -92,6 +120,10 @@ Three.prototype = {
 			self.resize();
 		}, false );
 		
+		// #31 - live watching DOM updates
+		if( this.options.watch )
+			$(this.container).bind('DOMSubtreeModified', this.watch);
+		
 		this.tick();
 		
 	},
@@ -128,7 +160,8 @@ Three.prototype = {
 		});
 		
 		// return as a jQuery object 
-		return $(list);
+		// collapse the array if only one item
+		return (list.length == 1) ?  list[0] : $(list);
 		
 	}, 
 	// one cycle in an infinite loop
@@ -205,17 +238,32 @@ Three.prototype = {
 	
 	dependencies : function( callback ){
 		
-		var scripts = false;
-		if(typeof THREE == "undefined") scripts = "http://cdnjs.cloudflare.com/ajax/libs/three.js/r53/three.min.js";  
+		var scripts = $.map( this.options.deps , function (item, index) {
+				// checking if the namespace is available
+				if( window[index] || ( window.THREE && window.THREE[index] ) ) return;
+                return item;
+            });
 		
 		// replace this with a proper dependency loader... 
-		if( scripts ){ 
-			$.getScript(scripts, callback);
+		if( scripts.length ){
+			this.loadScripts(scripts, callback);
 		} else {
 			callback();
 		}
 
-	} 
+	}, 
+	loadScripts : function(scripts, callback){
+		var self = this;
+		 
+		$.when( $.getScript( scripts.shift() ) ).done(function(){
+			if( scripts.length > 0 ){
+				self.loadScripts(scripts, callback);
+			} else {
+				// once the scripts are all loaded
+				callback();
+			}
+		});
+	}
 	
 
 };
@@ -268,6 +316,12 @@ Three.prototype.getAttributes = function( html ){
 					// add classes
 					var classes = attr[i].value.split(" ");
 					data["class"] = classes;
+				} else if( attr[i].name && attr[i].name.search("src") === 0 ){
+					// add source file
+					data.src = attr[i].value;
+				} else if( attr[i].name && attr[i].name.search("style") === 0 ){
+					// add source file
+					data.style = attr[i].value;
 				}
 			}
 		
@@ -283,15 +337,17 @@ Three.prototype.addClass = function( name ){
 		var $el = $(this.container).find("[data-id='"+ object.id +"']");
 		$el.addClass(name);
 		
-		var css = this.css( $el );
-		this.cssSet( css );
+		var options = this.css( $el );
+		this.fn.css.set.call( object, options );
 		
 		return this;
 	};
 
 
-// CSS Methods
-Three.prototype.css = function (a){
+// CSS
+
+// Public Methods
+css = function (a){
 		var sheets = document.styleSheets, o = {};
 		for(var i in sheets) {
 			var rules = sheets[i].rules || sheets[i].cssRules;
@@ -299,15 +355,18 @@ Three.prototype.css = function (a){
 				// #21 - excluding :hover styles from parsing
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
 				if(a.is(rules[r].selectorText)) {
-					o = $.extend(o, this.css2json(rules[r].style), this.css2json(a.attr('style')));
+					o = $.extend(o, css2json(rules[r].style), css2json(a.attr('style')));
 				}
 			}
 		}
 		return o;
 	};
+
+
+// Internal functions
+fn.css = {
 	
-Three.prototype.cssSet = function( css ){
-		var object = this.last;
+	set: function( object, css ){
 		
 		if( !object ) return;
 		
@@ -345,11 +404,24 @@ Three.prototype.cssSet = function( css ){
 				break;
 				// - transforms
 				case "transform":
+					var pos;
 					if(css[attr].search("translate3d") > -1 ){ 
-						object.position = this.cssTranslate( css[attr] );
+						pos = this.fn.css.translate.call( this, css[attr] );
+						// condition the position for "bare" meshes
+						if( object instanceof THREE.Mesh && object.type != "terrain"){
+							object.parent.position.set( pos.x, pos.y, pos.z );
+						} else {
+							object.position.set( pos.x, pos.y, pos.z );
+						}
 					}
 					if(css[attr].search("rotate3d") > -1 ){ 
-						object.rotation = this.cssRotate( css[attr] );
+						pos = this.fn.css.rotate.call( this,  css[attr] );
+						// condition the rotation for "bare" meshes
+						if( object instanceof THREE.Mesh && object.type != "terrain"){
+							object.parent.rotation.set( pos.x, pos.y, pos.z );
+						} else {
+							object.rotation.set( pos.x, pos.y, pos.z );
+						}
 					}
 				break;
 				// - animation
@@ -379,51 +451,82 @@ Three.prototype.cssSet = function( css ){
 				break;
 				case "background-image":
 					// background of a scene is a skydome...
-					if( object instanceof THREE.Scene)
-						this.cssSkybox(css[attr]);
-					if( object.type == "terrain" )
-						this.cssTerrain(css[attr]);
+					if( object instanceof THREE.Scene){
+						this.fn.css.skybox.call(this, css[attr]);
+					}
+					if( object.type == "terrain" ){ 
+						this.fn.css.terrain.call(this, css[attr]);
+					} else if ( object instanceof THREE.Mesh ) { 
+						this.fn.css.texture.call(this, object, css[attr]);
+					}
 				break;
 			}
 			
 		}
 		
-	};
-	/*
-	cssScene : function( css ){
-		//
-		for( var attr in css ){
-			// supported attributes
-			switch(attr){
-				
-			}
-		}
-	}, 
-	*/
-Three.prototype.cssSkybox = function( attr ){
-		// remove any whitespace, the url(..) and
-		// attempt to break it into an array
-		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
-		if(img instanceof Array){
-			// expext a six-pack of images
-			this.addSkybox( img );
-			
-		} else {
-			// this is one image... not implemented yet
-		}
-		
-		
-	};
+	},
 	
-Three.prototype.cssTerrain = function( attr ){
+	rotate: function( attr ){
+		
+		var rot = {};
+		// only supporting rotate3d for now...
+		if( attr.search("rotate3d") > -1 ){
+			// replace all the bits we don't need
+			var val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
+			// match returns array...
+			val = val[0].replace(/rotate3d\(|deg|\)| /gi, "").split(",");
+			// first three numbers toggle axis application - fourth is the degrees
+			rot = {
+				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 ) : 0,
+				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 ) : 0,
+				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 ) : 0
+			};
+			
+		}
+		
+		return rot;
+		
+	}, 
+	
+	translate: function( attr ){
+		
+		var pos = {};
+		// only supporting translate3d for now...
+		if( attr.search("translate3d") > -1 ){
+			// replace all the bits we don't need
+			var val = attr.match(/translate3d\(([\s\S]*?)\)/gi);
+			// match returns array...
+			val = val[0].replace(/translate3d\(|px|\)| /gi, "").split(",");
+			// add the right keys
+			pos = {
+				x: parseInt( val[0], 10 ) || 0,
+				y: parseInt( val[1], 10 ) || 0,
+				z: parseInt( val[2], 10 ) || 0
+			};
+			
+		}
+		
+		return pos;
+		
+	}, 
+	
+	texture: function( el, attr ){
+		var map = attr.replace(/\s|url\(|\)/g, "");
+		var material = this.webglMaterial({ map :  map });
+		el.material = material;
+	}, 
+	
+	terrain: function( attr ){
 		var object = this.last;
 		
 		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
 		if(img instanceof Array){
 			for( var i in img ){
+				
 				if( img[i].search("heightmap") > -1  ){
 					
 					var heightmapTexture = THREE.ImageUtils.loadTexture( img[i] );
+					//var heightmapTexture = this.webglTexture( img[i] );
 					object.material.uniforms.tDisplacement.value = heightmapTexture;
 					object.material.uniforms.uDisplacementScale.value = 375;
 					// heightmap also the second diffuse map? 
@@ -436,7 +539,10 @@ Three.prototype.cssTerrain = function( attr ){
 				}
 				if( img[i].search("diffuse") > -1  ){
 					
+					console.log( img[i] );
+					
 					var diffuseTexture1 = THREE.ImageUtils.loadTexture( img[i] );
+					//var diffuseTexture1 = this.webglTexture( img[i] );
 					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
 					
 					object.material.uniforms.tDiffuse1.value = diffuseTexture1;
@@ -444,8 +550,9 @@ Three.prototype.cssTerrain = function( attr ){
 					
 				}
 				if( img[i].search("specular") > -1 ){
-								
+					
 					var specularMap = THREE.ImageUtils.loadTexture( img[i] );
+					//var specularMap = this.webglTexture( img[i] );
 					specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
 					
 					object.material.uniforms.tSpecular.value = specularMap;
@@ -471,74 +578,64 @@ Three.prototype.cssTerrain = function( attr ){
 		//uniformsTerrain[ "uShininess" ].value = 30;
 
 		*/
-	};
+	}, 
 	
+	
+	skybox: function( attr ){
+		
+		// remove any whitespace, the url(..) and
+		// attempt to break it into an array
+		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
+		if(img instanceof Array){
+			// expext a six-pack of images
+			this.addSkybox( img );
+			
+		} else {
+			// this is one image... not implemented yet
+		}
+		
+	}
+	
+};
+
+	/*
+	cssScene : function( css ){
+		//
+		for( var attr in css ){
+			// supported attributes
+			switch(attr){
+				
+			}
+		}
+	}, 
+	*/
+
+
 // Converts a Translate3D property to a Three.js Position object
-Three.prototype.cssTranslate = function( attr ){
-		
-		var pos = {};
-		// only supporting translate3d for now...
-		if( attr.search("translate3d") > -1 ){
-			// replace all the bits we don't need
-			var val = attr.match(/translate3d\(([\s\S]*?)\)/gi);
-			// match returns array...
-			val = val[0].replace(/translate3d\(|px|\)| /gi, "").split(",");
-			// add the right keys
-			pos = {
-				x: parseInt( val[0], 10 ) || 0,
-				y: parseInt( val[1], 10 ) || 0,
-				z: parseInt( val[2], 10 ) || 0
-			};
-			
-		}
-		
-		return pos;
-		
-	};
-	
+
 // Converts a Rotate3D property to a Three.js Rotate
-Three.prototype.cssRotate = function( attr ){
-		
-		var rot = {};
-		// only supporting rotate3d for now...
-		if( attr.search("rotate3d") > -1 ){
-			// replace all the bits we don't need
-			var val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
-			// match returns array...
-			val = val[0].replace(/rotate3d\(|deg|\)| /gi, "").split(",");
-			// first three numbers toggle axis application - fourth is the degrees
-			rot = {
-				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 ) : 0,
-				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 ) : 0,
-				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 ) : 0
-			};
-			
-		}
-		
-		return rot;
-		
-	};
-	
+
 
 // Helpers
-Three.prototype.css2json = function (css){
-		var s = {};
-		if(!css) return s;
-		if(css instanceof CSSStyleDeclaration) {
-			for(var i in css) {
-				if((css[i]).toLowerCase) {
-					s[(css[i]).toLowerCase()] = (css[css[i]]);
-				}
-			}
-		} else if(typeof css == "string") {
-			css = css.split("; ");          
-			for (var j in css) {
-				var l = css[j].split(": ");
-				s[l[0].toLowerCase()] = (l[1]);
+var css2json = function (css){
+	var s = {};
+	if(!css) return s;
+	if(css instanceof CSSStyleDeclaration) {
+		for(var i in css) {
+			if((css[i]).toLowerCase) {
+				s[(css[i]).toLowerCase()] = (css[css[i]]);
 			}
 		}
-		return s;
-	};
+	} else if(typeof css == "string") {
+		css = css.split("; ");          
+		for (var j in css) {
+			var l = css[j].split(": ");
+			s[l[0].toLowerCase()] = (l[1]);
+		}
+	}
+	return s;
+};
+
 
 
 Three.prototype.animate = function(){
@@ -546,12 +643,13 @@ Three.prototype.animate = function(){
 		
 	};
 
-/*
-Three.prototype = $.extend(Three.prototype, {
-	
-	
-});
-*/
+Three.prototype.watch = function(e) {
+	console.log(e);
+	if (e.target.innerHTML.length > 0) {
+		// Handle new content
+		console.log( e.target.innerHTML );
+	}
+};
 
 // generic method to add an element
 Three.prototype.add = function( options ){
@@ -570,8 +668,8 @@ Three.prototype.add = function( options ){
 		
 		//	create 3d element
 		var webgl = this.webgl( options );
-		// exit now if no webgl object was created
-		if(typeof webgl == "undefined") return this;
+		// exit now if no webgl object was created (undefined condition should be removed)
+		if( !webgl || typeof webgl == "undefined") return this;
 		// add a new tag (if necessary)
 		//if ( options.html ){ 
 		
@@ -609,7 +707,7 @@ Three.prototype.add = function( options ){
 		
 		// apply css 
 		var css = this.css( $html );
-		this.cssSet( css );
+		this.fn.css.set.call(this, webgl, css );
 		
 		return this;
 		
@@ -728,7 +826,8 @@ Three.prototype.addSkybox = function( img ){
 				var reflectionCube = THREE.ImageUtils.loadTextureCube( img );
 				reflectionCube.format = THREE.RGBFormat;
 
-				var shader = THREE.ShaderUtils.lib.cube;
+				//var shader = THREE.ShaderUtils.lib.cube;
+				var shader = THREE.ShaderLib.cube;
 				shader.uniforms.tCube.value = reflectionCube;
 
 				var material = new THREE.ShaderMaterial( {
@@ -826,21 +925,41 @@ Three.prototype.createHTML = function( options ){
 		// create markup
 		var $tag = $('<'+ options.type +'>');
 		// add id
-		if( options.id )
+		if( options.id ){
 			$tag.attr("id", options.id );
+		}
 		// add attributes
-		if( options["data-id"] )
+		if( options["data-id"] ){
 			$tag.attr("data-id", options["data-id"] );
-		
+		}
+		// add classes
+		if(options["class"] && options["class"].length) { 
+			var classes = options["class"].join(" ");
+			$tag.attr("class", classes );
+		}
+		// add inline styles
+		if( options.style ){ 
+			$tag.attr("style", options.style );
+		}
 		// append to the dom
 		$tag.appendTo(this.parent);
 		
-		// set as the new parent (for nesting)...
-		this.parent = $tag; 
-		
+		// set as the new parent under certain conditions (for nesting)...
+		if(options.type == "scene" || options.type == "asset" || options.type == "player"){
+			this.parent = $tag; 
+		}
 		return $tag;
 	};
 
+Three.prototype.append = function(html){
+	
+	// pickup active scene
+	//var scene = this.active.scene;
+	// add the submitted markup (validation?)
+	//$(this.container).find("[data-id='"+ scene.id +"']").append( html );
+	this.html( html );
+	
+};
 
 Three.prototype.find = function( query ){ 
 		
@@ -889,12 +1008,21 @@ Three.prototype.webgl = function( options ){
 			case "terrain": 
 				el = this.webglTerrain( options );
 			break;
+			default: 
+				// a generic lookup in the internal methods...
+				el = (typeof this.fn.webgl[options.type] != "undefined" ) ? this.fn.webgl[options.type].apply(this, [options] ) : false;
+			break;
 		}
 		
 		return el; 
 		
 	};
 	
+// move all internal methods here...
+fn.webgl = {
+	
+};
+
 Three.prototype.webglScene = function( options ){
 		
 		var defaults = {
@@ -994,6 +1122,26 @@ Three.prototype.webglMaterial = function( attributes ){
 
 	};
 	
+
+Three.prototype.webglTexture = function( src ){
+	
+		// texture
+	
+		var texture = new THREE.Texture();
+	
+		var loader = new THREE.ImageLoader();
+		loader.addEventListener( 'load', function ( event ) {
+	
+			texture.image = event.content;
+			texture.needsUpdate = true;
+	
+		} );
+		loader.load( src );
+
+		return texture;
+		
+	};
+
 Three.prototype.webglLight = function( attributes ){
 		//var light 
 		//return light;
@@ -1225,4 +1373,15 @@ Three.prototype.setProperties = function() {
 		};
 	};
 	
-})( jQuery );
+
+// Prototype
+Three.prototype.css = css;
+Three.prototype.fn = fn;
+//Three.prototype.fn.webgl = fn.webgl;
+
+//Three.prototype.utils = utils;
+//Three.prototype.cssSet = cssSet;
+//Three.prototype.cssSkybox = cssSkybox;
+
+
+}));
