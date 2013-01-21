@@ -3,10 +3,19 @@
 A plugin - extension of the jQuery API for 3d objects (using Three.js) 
 
 
-## Scope
+## Introduction 
 
-Rendering and manipulating 3D objects on the web should be as simple and any other element in the DOM. This plugin takes all the syntax conventions of jQuery and applies them in 3D content created with Three.js - effectively making the 3D renderer a background component the web app is not directly interfacing with. 
+jQuery Three was developed to bridge the gap between WebGL and the DOM by using existing conventions web designers are already familiar with.
 
+Effectively it provides a higher level api that abstracts Three.js methods to known common conventions from web development.
+
+
+## Install
+
+Get the latest (stable) version using bower: 
+```
+bower install jquery.three
+```
 
 ## Usage
 
@@ -16,13 +25,13 @@ Enable 3D actions on any container using:
 $("container").three( options, callback );
 ```
 
-## Installation
+Read the [wiki](wiki) docs for more details on the [methods](wiki/Methods) and [tag support](wiki/Tags).
 
-Get the latest version using bower: 
-```
-bower install jquery.three
-```
 
-## Roadmap
+## Credits
 
-The library is still in early experimental phase - read the wiki docs for more details as the api is solidified.
+Created by [Makis Tracend](http://github.com/tracend)
+
+Distributed through [Makesites.org](http://makesites.org)
+
+Released under the [MIT License](http://makesites.org/licenses/MIT)
