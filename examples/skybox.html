@@ -12,9 +12,14 @@
 				height: 100%;
 			}
 			
-			scene {
+			.bluesky {
 				background-image: url(assets/img/skybox/bluesky/px.jpg), url(assets/img/skybox/bluesky/nx.jpg), url(assets/img/skybox/bluesky/py.jpg), url(assets/img/skybox/bluesky/ny.jpg), url(assets/img/skybox/bluesky/pz.jpg), url(assets/img/skybox/bluesky/nz.jpg);
 			}
+			
+			.stars {
+				background-image: url(assets/img/skybox/stars/px.jpg), url(assets/img/skybox/stars/nx.jpg), url(assets/img/skybox/stars/py.jpg), url(assets/img/skybox/stars/ny.jpg), url(assets/img/skybox/stars/pz.jpg), url(assets/img/skybox/stars/nz.jpg);
+			}
+			
 			
 			#main-cam {
 				-webkit-transform: translate3d( 0, 0, 2000px);
@@ -28,7 +33,7 @@
 	<body>
     
 		<div id="main">
-        	<scene id="first">
+        	<scene id="first" class="bluesky">
             	<camera id="main-cam" class="perspective" data-far="5000"></camera>
             </scene>
         </div>

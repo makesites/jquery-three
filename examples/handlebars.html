@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>jQuery Three :: Handlebars Template</title>
+		<meta charset="utf-8">
+        
+		<style type="text/css">
+			body, html{ margin: 0; padding: 0; width: 100%; height: 100%; background: #000 }
+			
+			#main {
+				width: 100%; 
+				height: 100%;
+			}
+			
+			scene {}
+			
+			#main-cam {
+				-webkit-transform: translate3d( 0, 500px, 2000px);
+				 /*-webkit-backface-visibility: hidden;
+  				-webkit-perspective: 1000; */
+			}
+			
+			button#add-new {
+				position: absolute;
+				z-index: 9999;
+			}
+			
+			.circle {
+				color: #f00;
+			}
+		</style>
+
+	</head>
+
+	<body>
+    
+        <button id="add-new">Add New</button>
+        
+		<div id="main">
+        	<scene id="first">
+            	<camera id="main-cam" class="perspective" data-fov="30" data-far="8000"></camera>
+            </scene>
+        </div>
+        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
+		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
+		<script type="text/javascript" src="../build/jquery.three.js"></script>
+        
+		<script id="sphere-template" type="text/x-handlebars-template">
+            <sphere class="circle" data-radius="100" data-segments="40" data-rings="30" style="color: {{color}}; -webkit-transform: translate3d( {{random 1000}},  {{random 1000}}, {{random 1000}});"></sphere>
+        </script>
+        
+        <script type="text/javascript"> 
+			
+			// load template
+			var template = Handlebars.compile( $("#sphere-template").html() );
+			
+			// initiate 3d environemnt
+			$3d = $("#main").three({
+				watch : true
+			});
+			
+			// add event listener
+			$("#main").on("update", LookArround);
+			
+			Handlebars.registerHelper("random", function(num){
+				return Math.round( Math.random() * num ) +"px";
+			});
+			
+			Handlebars.registerHelper("color", function(){
+				return "#"+Math.floor(Math.random()*16777215).toString(16);
+			});
+			
+			// register button event
+			$("#add-new").click(function(){
+				var html = template({});
+				$3d.append( html );
+			});
+			
+		</script>
+        
+	</body>
+</html>

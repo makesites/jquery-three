@@ -1,0 +1,31 @@
+newmtl trunk
+Ka 0.117647 0.117647 0.117647
+Kd 1 1 1
+Ks 1 1 1
+illum 2
+Ns 8
+map_Kd palm_bark.JPG
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
+
+newmtl branches
+Ka 0.117647 0.117647 0.117647
+Kd 1 1 1
+Ks 1 1 1
+illum 2
+Ns 8
+map_Kd palm_leafs.JPG
+map_bump 
+bump 
+map_opacity 
+map_d 
+refl 
+map_kS 
+map_kA 
+map_Ns 
