@@ -30,7 +30,7 @@
 				color: #999;
 				width: 1px;
 				height: 1px;
-				background-image: url("assets/img/1m_grid.jpg")
+				background-image: url("assets/img/1m_grid.jpg");
 			}
 			
 			
@@ -60,25 +60,27 @@
 			// load template
 			var template = Handlebars.compile( $("#box-template").html() );
 			
-			// initiate 3d environemnt
+			// initiate 3d environment
 			$("#main").three({
 				"deps" : {
 					"FirstPersonControls" : "https://raw.github.com/mrdoob/three.js/master/examples/js/controls/FirstPersonControls.js"
 				}
 			}, function( $3d ){
 				
-				// repead 100 times
+				// repeat 100 times
 				for( var i=0; i < 100; i++){
 					var html = template({});
 					$3d.append( html );
 				}
+				
+				// initialize walking
 				WalkAround.init( $3d );
 			});
 			
 			// add event listener
 			$("#main").on("update", WalkAround.update);
 				
-			
+			// helpers
 			Handlebars.registerHelper("random", function(num){
 				return (Math.round( num * (Math.random() - 0.5 ) )*4) +"px";
 			});
