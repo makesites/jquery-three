@@ -1,20 +1,20 @@
 {
     "private" : true,
     "name" : "jquery.three",
-    "version" : "0.5.0",
-    "devDependencies" : {
+    "version" : "0.6.0",
+	"licenses": [
+		{
+		"type": "MIT License",
+		"url": "http://makesites.org/licenses/MIT"
+		}
+	],
+   "engine" : {
+        "node" : ">0.8.x"
+    }, 
+	"devDependencies" : {
         "commander" : "~0.5",
 		"jshint" : "~0.9",
         "uglify-js2" : "~2.1",
 		"hbs" : "~1.0"
-    },
-    "engine" : {
-        "node" : "0.8.x"
-    }, 
-  "licenses": [
-    {
-      "type": "MIT License",
-      "url": "http://opensource.org/licenses/MIT"
     }
-  ]
 }
