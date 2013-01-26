@@ -19,21 +19,22 @@ window.requestAnimFrame = ( function( callback ) {
 	};
 })();
 
-(function (factory) {
+(function (root, factory) {
  
 	"use strict";
 	
 	var define = define || false;
-	var jQuery = jQuery || false;
+	var jquery = root.$ || root.jQuery || root.ender;
 	
     if (define && typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['jquery'], factory);
     } else {
         // Browser globals
-        factory( jQuery );
+        factory( jquery );
     }
-}(function ( jQuery ) {
+	
+}(this, function ( $ ) {
 
 // Local variables
 var css, _css;
