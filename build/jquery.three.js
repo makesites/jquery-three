@@ -354,8 +354,12 @@ css = function (a){
 			for(var r in rules) {
 				// #21 - excluding :hover styles from parsing
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
-				if(a.is(rules[r].selectorText)) {
-					o = $.extend(o, css2json(rules[r].style), css2json(a.attr('style')));
+				try{ 
+					if(a.is(rules[r].selectorText)) {
+						o = $.extend(o, css2json(rules[r].style), css2json(a.attr('style')));
+					}
+				} catch( e ) {
+					console.log( e );
 				}
 			}
 		}
