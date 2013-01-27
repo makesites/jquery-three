@@ -1,5 +1,5 @@
 {
-	"name": "jquery-three",
+	"name": "three",
 	"version": "0.6.2",
     "title": "jQuery Three",
     "description": "A plugin / extension of the jQuery API for 3d objects (using Three.js)",
