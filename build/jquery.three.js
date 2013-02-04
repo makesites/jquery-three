@@ -65,10 +65,14 @@ var fn = {
 		this.scenes = {};
 		this.cameras = {};
 		this.materials = {};
+		// defining types (extandable)
+		this.groups = {
+			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
+		};
 		// pointers for objects
 		this.last = false;
 		this.parent = false;
-		
+			
 		// Dependencies (replace with AMD module?)
 		this.dependencies( function () {
 			self.init();
@@ -221,17 +225,14 @@ Three.prototype = {
 		
 		// update properties
 		this.properties = this.setProperties();
-		
 		// loop through cameras
 		for( var i in this.cameras ){
-			
 			this.cameras[i].aspect = this.properties.aspect;
 			this.cameras[i].updateProjectionMatrix();
-			// better way of targeting skybox???
-			this.active.skybox.aspect = this.properties.aspect;
-			this.active.skybox.updateProjectionMatrix();
-			
 		}
+		// better way of targeting skybox???
+		this.active.skybox.camera.aspect = this.properties.aspect;
+		this.active.skybox.camera.updateProjectionMatrix();
 		
 		this.renderer.setSize( this.properties.width, this.properties.height );
 	}, 
@@ -336,9 +337,9 @@ Three.prototype.addClass = function( name ){
 		// add the class to the markup 
 		var $el = $(this.container).find("[data-id='"+ object.id +"']");
 		$el.addClass(name);
-		
-		var options = this.css( $el );
-		this.fn.css.set.call( object, options );
+		// update 3d object
+		var options = this.fn.css.styles.call(this, $el );
+		this.fn.css.set.call(this, object, options );
 		
 		return this;
 	};
@@ -347,8 +348,20 @@ Three.prototype.addClass = function( name ){
 // CSS
 
 // Public Methods
-css = function (a){
+css = function ( styles ){
+		// support more than one formats? 
+		// for now expecting a straighforward object...
+		this.fn.css.set.call(this, this.last , styles);
+		// preserve chainability
+		return this;
+	};
+
+
+// Internal functions
+fn.css = {
+	styles: function (a){
 		var sheets = document.styleSheets, o = {};
+		// loop through stylesheets
 		for(var i in sheets) {
 			var rules = sheets[i].rules || sheets[i].cssRules;
 			for(var r in rules) {
@@ -356,23 +369,21 @@ css = function (a){
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
 				try{ 
 					if(a.is(rules[r].selectorText)) {
-						o = $.extend(o, css2json(rules[r].style), css2json(a.attr('style')));
+						o = $.extend(o, css2json(rules[r].style));
 					}
 				} catch( e ) {
 					console.log( e );
 				}
 			}
 		}
+		// add inline styles
+		o = $.extend(o, css2json(a.attr('style')));
+		//
 		return o;
-	};
-
-
-// Internal functions
-fn.css = {
-	
+	}, 
 	set: function( object, css ){
-		
-		if( !object ) return;
+		// if the object is not valid quit...
+		if( !object || !object.id ) return;
 		
 		for( var attr in css ){
 			// remove prefixes
@@ -466,11 +477,19 @@ fn.css = {
 					// background of a scene is a skydome...
 					if( object instanceof THREE.Scene){
 						this.fn.css.skybox.call(this, css[attr]);
-					}
-					if( object.type == "terrain" ){ 
+					} else if( object.type == "terrain" ){ 
 						this.fn.css.terrain.call(this, css[attr]);
 					} else if ( object instanceof THREE.Mesh ) { 
 						this.fn.css.texture.call(this, object, css[attr]);
+					} else if ( object instanceof THREE.Object3D && object.children.length) { 
+						// potentially the above condition can be removed if the ids are assigned properly in the markup...
+						try { 
+							// find the child...
+							var mesh =  object.children[0];
+							this.fn.css.texture.call(this, mesh, css[attr]);
+						} catch( e ){
+							console.log(e);
+						}
 					}
 				break;
 			}
@@ -482,17 +501,18 @@ fn.css = {
 	rotate: function( attr ){
 		
 		var rot = {};
+		var val;
 		// only supporting rotate3d for now...
 		if( attr.search("rotate3d") > -1 ){
 			// replace all the bits we don't need
-			var val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
+			val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
 			// match returns array...
 			val = val[0].replace(/rotate3d\(|deg|\)| /gi, "").split(",");
 			// first three numbers toggle axis application - fourth is the degrees
 			rot = {
-				x: ( parseInt( val[0], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0,
-				y: ( parseInt( val[1], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0,
-				z: ( parseInt( val[2], 10 ) ) ? parseInt( val[3], 10 )*Math.PI/180 : 0
+				x: parseFloat( val[0], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180),
+				y: parseFloat( val[1], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180),
+				z: parseFloat( val[2], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180)
 			};
 			
 		}
@@ -512,9 +532,9 @@ fn.css = {
 			val = val[0].replace(/translate3d\(|px|\)| /gi, "").split(",");
 			// add the right keys
 			pos = {
-				x: parseInt( val[0], 10 ) || 0,
-				y: parseInt( val[1], 10 ) || 0,
-				z: parseInt( val[2], 10 ) || 0
+				x: parseFloat( val[0], 10 ) || 0,
+				y: parseFloat( val[1], 10 ) || 0,
+				z: parseFloat( val[2], 10 ) || 0
 			};
 			
 		}
@@ -534,9 +554,9 @@ fn.css = {
 			val = val[0].replace(/scale3d\(|\)| /gi, "").split(",");
 			// first three numbers toggle axis application - fourth is the degrees
 			size = {
-				x: parseInt( val[0], 10 ) || 0,
-				y: parseInt( val[1], 10 ) || 0,
-				z: parseInt( val[2], 10 ) || 0
+				x: parseFloat( val[0], 10 ) || 0,
+				y: parseFloat( val[1], 10 ) || 0,
+				z: parseFloat( val[2], 10 ) || 0
 			};
 			
 		}
@@ -714,64 +734,66 @@ Three.prototype.eventAttribute = function(e) {
 
 // generic method to add an element
 Three.prototype.add = function( options ){
+		var self = this;
 		// use the active scene if not specified
 		//var parent = scene || this.active.scene;
 		// get the type from the tag name
 		//var type = html.nodeName.toLowerCase();
 		// list of containers (we'll be using)
-		var groups = {
-			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
-		};
-		var object;
 		
 		// exit if no type is specified
 		if( typeof options == "undefined" || typeof options.type == "undefined" ) return this;
 		
 		//	create 3d element
-		var webgl = this.webgl( options );
-		// exit now if no webgl object was created (undefined condition should be removed)
-		if( !webgl || typeof webgl == "undefined") return this;
-		// add a new tag (if necessary)
-		//if ( options.html ){ 
-		
-		// set a reference to the last el (for later)
-		this.last = webgl;
-		
-		// add to the relevant bucket
-		var container = groups[ options.type ] || false;
-		// create object container only for primitives...
-		if( container == "objects" ){
-			// create new object
-			object = new THREE.Object3D();
-			object.add(webgl);
-		} else {
-			object = webgl;
-		}
-		//this[ options.type+"s" ][0] = webgl;
-		// condition which elements have an active flag?
-		this.active[ options.type ] = object;
-		//
-		if( container ){
-			// save in the objects bucket 
-			this[container][object.id] = object;
-		}
-		// add to scene
-		if( options.type == "scene"){ 
-			this.active.scene = object;
-		} else {
-			this.active.scene.add( object );
-		}
-		// keep a reference of the object id
-		options["data-id"] = object.id || false;
-		// create the tag in the shadow dom
-		var $html = this.createHTML( options );
-		
-		// apply css 
-		var css = this.css( $html );
-		this.fn.css.set.call(this, webgl, css );
+		this.webgl( options, function( webgl ){
+			
+			// exit now if no webgl object was created (undefined condition should be removed)
+			if( !webgl || typeof webgl == "undefined") return this;
+			// add a new tag (if necessary)
+			//if ( options.html ){ 
+			var object;
+			
+			// set a reference to the last el (for later)
+			self.last = webgl;
+			
+			// add to the relevant bucket
+			var container = self.groups[ options.type ] || false;
+			// create object container only for primitives...
+			if( container == "objects" ){
+				// create new object
+				object = new THREE.Object3D();
+				object.add(webgl);
+				// #40 copy name from mesh
+				object.name = webgl.name;
+			} else {
+				object = webgl;
+			}
+			//this[ options.type+"s" ][0] = webgl;
+			// condition which elements have an active flag?
+			self.active[ options.type ] = object;
+			//
+			if( container ){
+				// save in the objects bucket 
+				self[container][object.id] = object;
+			}
+			// add to scene
+			if( options.type == "scene"){ 
+				self.active.scene = object;
+			} else {
+				self.active.scene.add( object );
+			}
+			// keep a reference of the object id
+			options["data-id"] = object.id || false;
+			// create the tag in the shadow dom
+			var $html = self.createHTML( options );
+			
+			// apply css 
+			var css = self.fn.css.styles.call(self, $html );
+			self.fn.css.set.call(self, webgl, css );
+			
+		});
 		
 		return this;
-		
 	};
 	
 Three.prototype.addScene = function( obj ){
@@ -1023,21 +1045,50 @@ Three.prototype.append = function(html){
 	// add the submitted markup (validation?)
 	//$(this.container).find("[data-id='"+ scene.id +"']").append( html );
 	this.html( html );
-	
+	// #38 preserve chainability...
+	return this;
 };
 
-Three.prototype.find = function( query ){ 
+find = function( query ){ 
 		
+		// find the element in the containers
+		var el = this.fn.find.el.call(this, query);
+		// save element
+		this.last = el;
+		// preserve chainability
+		return this;
+		
+	};
+	
+
+// Internal
+
+fn.find = {
+	el : function( query ){ 
+	
 		var id = $(this.container).find("shadow-root "+ query).attr("data-id");
 		// find the element in the containers
 		var el = this.objects[id] || this.cameras[id] || this.scenes[id];
 		
 		return el;
-	};
+	}
+};
 	
+	
+// #39 Wildcard extension to the Three.js namespace
+fn.three = function(fn, query ){ 
+	var object = this.last;
+	try{
+		object[fn]( query );
+	} catch( e ){
+		console.log("Method not supported:", e );
+	}
+	return this;
+};
+
 
 // generic method to create an element
-Three.prototype.webgl = function( options ){
+Three.prototype.webgl = function( options, callback ){
 		// get the type from the tag name
 		//var type = html.nodeName.toLowerCase();
 		var el;
@@ -1075,11 +1126,11 @@ Three.prototype.webgl = function( options ){
 			break;
 			default: 
 				// a generic lookup in the internal methods...
-				el = (typeof this.fn.webgl[options.type] != "undefined" ) ? this.fn.webgl[options.type].apply(this, [options] ) : false;
+				if(typeof this.fn.webgl[options.type] != "undefined" ) this.fn.webgl[options.type].apply(this, [options, callback] );
 			break;
 		}
 		
-		return el; 
+		return callback(el); 
 		
 	};
 	
@@ -1441,12 +1492,15 @@ Three.prototype.setProperties = function() {
 
 // Prototype
 Three.prototype.css = css;
+Three.prototype.find = find;
 Three.prototype.fn = fn;
 //Three.prototype.fn.webgl = fn.webgl;
-
 //Three.prototype.utils = utils;
-//Three.prototype.cssSet = cssSet;
-//Three.prototype.cssSkybox = cssSkybox;
 
+// #39 Wildcard extension - replace this hardcoding list with a proper wildcard method, once available (Proxy)
+//Three.prototype.__noSuchMethod__ = fn.three;
+Three.prototype.lookAt = function(){
+	return this.fn.three.call(this, "lookAt", arguments);
+};
 
 }));
