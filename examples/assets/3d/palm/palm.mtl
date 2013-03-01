@@ -27,12 +27,12 @@ Kd 1 1 1
 Ks 1 1 1
 illum 2
 Ns 8
-map_Kd palm leafs.png
+map_Kd palm_leafs.png
 map_bump 
 bump 
 map_opacity 
 map_d 
 refl 
-map_kS palm leafs_spec.png
+map_kS palm_leafs_spec.png
 map_kA 
 map_Ns 

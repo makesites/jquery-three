@@ -1,25 +1,31 @@
 (function(){
 	
-	Three.prototype.fn.webgl.obj = function( attributes ){ 
+	// Requires the BinaryLoader extension
+	Three.prototype.fn.webgl.obj = function( options, callback ){ 
+		// define the group (once)
+		if( !this.groups['obj'] ) this.groups['obj'] = "objects";
+		
 		// model
 		var self = this;
-		var object = {};
-		var texture = ( attributes.map ) ? this.webglTexture( map ) : false;
 		
-		var loader = new THREE.OBJMTLLoader();
-		loader.addEventListener( 'load', function ( event ) {
+		loader = new THREE.BinaryLoader( true );
+		
+		loader.load( options.src, function ( geometry, materials ) {
 			
-			object = event.content;
+			var object = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial(materials) );
+			
+			object.geometry = geometry;
+			object.material =  new THREE.MeshFaceMaterial(materials);
+			//object.material.side = THREE.DoubleSide;
+			// save id as name 
+			if( options.id ) object.name = options.id;
 			
 			self.active.scene.add( object );
-
+			
+			callback( object );
+			
 		});
-		// 
-		if( attributes.src ){ 
-			loader.load( attributes.src, attributes.mtl );
-
-		}
-		return object;
+		
 	}
 	
 })();
