@@ -52,7 +52,6 @@ var fn = {
 			"THREE" : "https://raw.github.com/mrdoob/three.js/master/build/three.min.js"
 			//"FresnelShader" : ""
 		}
-		
 	};
 	
 	Three = function( obj, options, callback ){
@@ -68,6 +67,12 @@ var fn = {
 		// defining types (extandable)
 		this.groups = {
 			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
+		};
+		// #43 - calculating 'actual' framerate
+		this.frame = {
+			current: 0,
+			rate: 0,
+			date: new Date()
 		};
 		// pointers for objects
 		this.last = false;
@@ -175,6 +180,16 @@ Three.prototype = {
 		// update vars for objects
 		// 
 		this.render();
+		// #43 - calculate framerate
+		var now = new Date();
+		if( this.frame.date.getSeconds() === now.getSeconds() ){ 
+			this.frame.current++;
+		} else {
+			// new frame, new count
+			this.frame.rate = this.frame.current;
+			this.frame.current = 1; //start fron 1 to include running frame ;)
+			this.frame.date = now;
+		}
 		// loop on the next click
 		requestAnimFrame(function(){ self.tick(); });
 		
@@ -415,7 +430,12 @@ fn.css = {
 				// - color
 				case "color":
 					var color =  this.colorToHex(css[attr]);
-					object.material.color.setHex(color);
+					if( object instanceof THREE.Scene){
+						//this.fn.css.skybox.call(this, css[attr]);
+						this.webglLight({color : color});
+					} else { 
+						object.material.color.setHex(color);
+					}
 				break;
 				// - transforms
 				case "transform":
@@ -698,23 +718,23 @@ Three.prototype.animate = function(){
 
 // watch an element for changes
 Three.prototype.watch = function( el ) {
-	// monitor new elements 
-	$( el ).bind('DOMSubtreeModified', this.eventSubtree);
+	// monitor new elements
+	$( el ).live('DOMSubtreeModified', this.eventSubtree);
 	// monitor attribute changes
 	if (el.onpropertychange){
-		$( el ).bind( 'propertychange', this.eventAttribute );
+		$( el ).live( 'propertychange', this.eventAttribute );
 	}
 	else {
-		$( el ).bind( 'DOMAttrModified', this.eventAttribute );
+		$( el ).live( 'DOMAttrModified', this.eventAttribute );
 	}
 	// monitor css style changes
-	
-	
+
+
 };
 
 // - new element
 Three.prototype.eventSubtree = function(e) {
-	
+
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
 		console.log( e.target.innerHTML );
@@ -723,9 +743,9 @@ Three.prototype.eventSubtree = function(e) {
 
 // - updated attribute
 Three.prototype.eventAttribute = function(e) {
-	
+
 	console.log("attribute",  e.target );
-	
+
 };
 
 // - updated style(s)
@@ -1259,6 +1279,9 @@ Three.prototype.webglTexture = function( src ){
 	};
 
 Three.prototype.webglLight = function( attributes ){
+		
+		this.active.scene.add( new THREE.AmbientLight( parseInt( attributes.color, 16 ) ) );
+		
 		//var light 
 		//return light;
 	};
