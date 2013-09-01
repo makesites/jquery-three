@@ -747,7 +747,7 @@ Three.prototype.eventSubtree = function(e) {
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
 		var html = e.target.innerHTML;
-		//this.append( html );
+		this.append( html, { silent : true });
 	}
 };
 
@@ -764,31 +764,31 @@ Three.prototype.eventAttribute = function(e) {
 
 
 // generic method to add an element
-Three.prototype.add = function( options ){
+Three.prototype.add = function( attributes, options ){
 		var self = this;
 		// use the active scene if not specified
 		//var parent = scene || this.active.scene;
 		// get the type from the tag name
 		//var type = html.nodeName.toLowerCase();
 		// list of containers (we'll be using)
-		
+
 		// exit if no type is specified
-		if( typeof options == "undefined" || typeof options.type == "undefined" ) return this;
-		
+		if( typeof attributes == "undefined" || typeof attributes.type == "undefined" ) return this;
+
 		//	create 3d element
-		this.webgl( options, function( webgl ){
-			
+		this.webgl( attributes, function( webgl ){
+
 			// exit now if no webgl object was created (undefined condition should be removed)
 			if( !webgl || typeof webgl == "undefined") return this;
 			// add a new tag (if necessary)
-			//if ( options.html ){ 
+			//if ( attributes.html ){
 			var object;
-			
+
 			// set a reference to the last el (for later)
 			self.last = webgl;
-			
+
 			// add to the relevant bucket
-			var container = self.groups[ options.type ] || false;
+			var container = self.groups[ attributes.type ] || false;
 			// create object container only for primitives...
 			if( container == "objects" ){
 				// create new object
@@ -799,139 +799,143 @@ Three.prototype.add = function( options ){
 			} else {
 				object = webgl;
 			}
-			//this[ options.type+"s" ][0] = webgl;
+			//this[ attributes.type+"s" ][0] = webgl;
 			// condition which elements have an active flag?
-			self.active[ options.type ] = object;
+			self.active[ attributes.type ] = object;
 			//
 			if( container ){
-				// save in the objects bucket 
+				// save in the objects bucket
 				self[container][object.id] = object;
 			}
 			// add to scene
-			if( options.type == "scene"){ 
+			if( attributes.type == "scene"){
 				self.active.scene = object;
 			} else {
 				self.active.scene.add( object );
 			}
 			// keep a reference of the object id
-			options["data-id"] = object.id || false;
+			attributes["data-id"] = object.id || false;
 			// create the tag in the shadow dom
-			var $html = self.createHTML( options );
-			
-			// apply css 
+			var $html;
+			if( options.silent ){
+				console.log("silenttt");
+			} else {
+				$html = self.createHTML( attributes );
+			}
+			// apply css
 			var css = self.fn.css.styles.call(self, $html );
 			self.fn.css.set.call(self, webgl, css );
-			
+
 		});
-		
+
 		return this;
 	};
-	
+
 Three.prototype.addScene = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "scene";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add camera(s)
 Three.prototype.addCamera = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "camera";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add meshes
 Three.prototype.addMesh = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "mesh";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add a plane
 Three.prototype.addPlane = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "plane";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add a sphere
 Three.prototype.addSphere = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "sphere";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add a cube
 Three.prototype.addCube = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "cube";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add a cylinder
 Three.prototype.addCylinder = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "cylinder";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
-	
+
 // add asset
 Three.prototype.addAsset = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "asset";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
-	};  
-	
+
+	};
+
 Three.prototype.addSkybox = function( img ){
-			
+
 				// does this camera have set values??
 				var camera = new THREE.PerspectiveCamera( 50, $(this.container).width() / $(this.container).height(), 1, 100 );
 
@@ -955,85 +959,86 @@ Three.prototype.addSkybox = function( img ){
 				});
 
 				mesh = new THREE.Mesh( new THREE.CubeGeometry( 100, 100, 100 ), material );
-				
+
 				scene.add( mesh );
-				
+
 				// save as active
 				this.active.skybox = {
-					scene : scene, 
+					scene : scene,
 					camera : camera
 				};
-				
+
 	};
-	
+
 Three.prototype.addTerrain = function( obj ){
-		
+
 		var options = obj ||{};
-		
+
 		options.type = "terrain";
-		
+
 		this.add(options);
-		
+
 		return this;
-		
+
 	};
 
 
 // generic method to create an element
-Three.prototype.html = function(html){
+Three.prototype.html = function(html, options){
 		var self = this;
-		
+
 		// loop throught the elements of the dom
 		$(html).filter('*').each(function(i, el){
-			// is this a jQuery bug? 
+			// is this a jQuery bug?
 			var $el = (typeof el == "undefined") ? false : $(el);
-			
+
 			// exit if there is no parent set
 			if( !$el ) return;
-			
-			
-			var options = {}; 
+
+			var attr = {};
 			// use the active scene if not specified
 			//var parent = scene || this.active.scene;
 			// get the type from the tag name
-			options.type = el.nodeName.toLowerCase();
-			options.id = $el.attr("id");
-		
+			attr.type = el.nodeName.toLowerCase();
+			attr.id = $el.attr("id");
+
 			// the set of attributes
 			var attributes = self.getAttributes( el );
 			//
-			options = $.extend(options, attributes);
-			
-			self.add( options );
-			
+			attr = $.extend(attr, attributes);
+
+			self.add( attr, options );
+
 			// loop throught the children
 			self.html( $el.html() );
-		
+
 		});
-		
+
+		return this;
+
 	};
 	/*
 	htmlScene : function( html ){
-		
+
 		var self = this;
 		var $scene = $(html);
-		//make this optional? 
+		//make this optional?
 		var id = $scene.attr("id");
 		// create a new scene
 		this.scenes[id] = this.addScene( options );
 		// get css attributes
 		var css = this.css( $scene );
 		this.cssScene( css );
-		
-		// render all supported objects 
-		
-		
-	}, 
+
+		// render all supported objects
+
+
+	},
 	htmlCamera : function( html ){
-		
+
 		this.cameras[id] = this.addCamera( options );
-		
-	}, 
+
+	},
 	*/
 Three.prototype.createHTML = function( options ){
 		// create markup
@@ -1047,35 +1052,35 @@ Three.prototype.createHTML = function( options ){
 			$tag.attr("data-id", options["data-id"] );
 		}
 		// add classes
-		if(options["class"] && options["class"].length) { 
+		if(options["class"] && options["class"].length) {
 			var classes = options["class"].join(" ");
 			$tag.attr("class", classes );
 		}
 		// add inline styles
-		if( options.style ){ 
+		if( options.style ){
 			$tag.attr("style", options.style );
 		}
 		// append to the dom
 		$tag.appendTo(this.parent);
-		
+
 		// set as the new parent under certain conditions (for nesting)...
 		if(options.type == "scene" || options.type == "asset" || options.type == "player"){
-			this.parent = $tag; 
+			this.parent = $tag;
 		}
-		
+
 		// add listening events (if enabled)
 		//if(this.options.watch) this.watch($tag);
-		
+
 		return $tag;
 	};
 
-Three.prototype.append = function(html){
-	
+Three.prototype.append = function(html, options){
+	options = options || {};
 	// pickup active scene
 	//var scene = this.active.scene;
 	// add the submitted markup (validation?)
 	//$(this.container).find("[data-id='"+ scene.id +"']").append( html );
-	this.html( html );
+	this.html( html, options );
 	// #38 preserve chainability...
 	return this;
 };
