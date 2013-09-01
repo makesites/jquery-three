@@ -718,15 +718,22 @@ Three.prototype.animate = function(){
 
 // watch an element for changes
 Three.prototype.watch = function( el ) {
+	var self = this;
 	var element = $(this.container).toSelector() +" "+ $( el ).selector;
 	// monitor new elements
-	$('body').on('DOMSubtreeModified', element, this.eventSubtree);
+	$('body').on('DOMSubtreeModified', element, function(e){
+		self.eventSubtree(e);
+	});
 	// monitor attribute changes
 	if (el.onpropertychange){
-		$('body').on('propertychange', element, this.eventAttribute);
+		$('body').on('propertychange', element, function(e){
+		self.eventAttribute(e);
+	});
 	}
 	else {
-		$('body').on('DOMAttrModified', element, this.eventAttribute);
+		$('body').on('DOMAttrModified', element, function(e){
+		self.eventAttribute(e);
+	});
 	}
 	// monitor css style changes
 
@@ -735,15 +742,18 @@ Three.prototype.watch = function( el ) {
 
 // - new element
 Three.prototype.eventSubtree = function(e) {
+	e.stopPropagation();
 
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
-		console.log( e.target.innerHTML );
+		var html = e.target.innerHTML;
+		//this.append( html );
 	}
 };
 
 // - updated attribute
 Three.prototype.eventAttribute = function(e) {
+	e.stopPropagation();
 
 	console.log("attribute",  e.target );
 
