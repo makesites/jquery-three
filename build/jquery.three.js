@@ -727,22 +727,28 @@ Three.prototype.watch = function( el ) {
 	// monitor attribute changes
 	if (el.onpropertychange){
 		$('body').on('propertychange', element, function(e){
-		self.eventAttribute(e);
-	});
+			self.eventAttribute(e);
+		});
 	}
 	else {
 		$('body').on('DOMAttrModified', element, function(e){
-		self.eventAttribute(e);
-	});
+			self.eventAttribute(e);
+		});
 	}
 	// monitor css style changes
-
 
 };
 
 // - new element
 Three.prototype.eventSubtree = function(e) {
 	e.stopPropagation();
+
+	// variables
+	var $root = $( $(this.container).toSelector() +" shadow-root" ).get(0);
+	var $target = $(e.target).get(0);
+
+	// don't go above the root
+	this.parent = ( $root == $target ) ? $(e.target) : $(e.target).parent();
 
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
@@ -986,6 +992,8 @@ Three.prototype.addTerrain = function( obj ){
 // generic method to create an element
 Three.prototype.html = function(html, options){
 		var self = this;
+		// fallbacks
+		options = options || {};
 
 		// loop throught the elements of the dom
 		$(html).filter('*').each(function(i, el){
@@ -1010,7 +1018,7 @@ Three.prototype.html = function(html, options){
 			self.add( attr, options );
 
 			// loop throught the children
-			self.html( $el.html() );
+			self.html( $el.html(), options );
 
 		});
 
