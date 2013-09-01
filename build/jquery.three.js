@@ -114,6 +114,7 @@ Three.prototype = {
 		// clear it off...
 		$(this.container).html("<shadow-root></shadow-root>");
 		this.parent = $(this.container).find("shadow-root");
+		this.target = this.parent;
 		this.html( html );
 
 		//document.body.appendChild( this.renderer.domElement );
@@ -749,6 +750,7 @@ Three.prototype.eventSubtree = function(e) {
 
 	// don't go above the root
 	this.parent = ( $root == $target ) ? $(e.target) : $(e.target).parent();
+	this.target = $(e.target);
 
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
@@ -824,9 +826,13 @@ Three.prototype.add = function( attributes, options ){
 			// create the tag in the shadow dom
 			var $html;
 			if( options.silent ){
-				console.log("silenttt");
+				// target should be already set?
+				$html = self.target;
+				// add data-id to existing containers
+				$html.attr("data-id" , attributes["data-id"]);
 			} else {
 				$html = self.createHTML( attributes );
+				self.target = $html;
 			}
 			// apply css
 			var css = self.fn.css.styles.call(self, $html );
