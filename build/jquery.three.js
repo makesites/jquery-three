@@ -719,13 +719,13 @@ Three.prototype.animate = function(){
 // watch an element for changes
 Three.prototype.watch = function( el ) {
 	// monitor new elements
-	$( el ).live('DOMSubtreeModified', this.eventSubtree);
+	$('body').on('DOMSubtreeModified', $( el ), this.eventSubtree);
 	// monitor attribute changes
 	if (el.onpropertychange){
-		$( el ).live( 'propertychange', this.eventAttribute );
+		$('body').on('propertychange', $( el ), this.eventAttribute);
 	}
 	else {
-		$( el ).live( 'DOMAttrModified', this.eventAttribute );
+		$('body').on('DOMAttrModified', $( el ), this.eventAttribute);
 	}
 	// monitor css style changes
 
