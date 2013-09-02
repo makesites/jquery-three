@@ -23,7 +23,7 @@ concat({
 		'lib/manipulation.js',
 		'lib/markup.js',
 		'lib/selectors.js',
-		'lib/three.js',
+		'lib/webgl.js',
 		'lib/utils.js',
 		'lib/_end.js'
 	],
