@@ -1400,10 +1400,10 @@ Three.prototype.webglCylinder = function( attributes ){
 
 		var defaults = {
 			id : false,
-			radiusTop : 100,
-			radiusBottom : 100,
-			segmentsRadius : 400,
-			segmentsHeight : 50,
+			radiusTop : 1,
+			radiusBottom : 1,
+			segmentsRadius : 4,
+			segmentsHeight : 16,
 			openEnded : false,
 			color: 0x000000,
 			wireframe: false,
