@@ -773,6 +773,8 @@ Three.prototype.eventAttribute = function(e) {
 // generic method to add an element
 Three.prototype.add = function( attributes, options ){
 		var self = this;
+		// fallbacks
+		options = options || {};
 		// use the active scene if not specified
 		//var parent = scene || this.active.scene;
 		// get the type from the tag name
