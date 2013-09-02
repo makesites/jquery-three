@@ -4,7 +4,7 @@ var FILE_ENCODING = 'utf-8',
 
 // Dependencies
 var _cli = require('commander'),
-	_uglify = require("uglify-js2"),
+	_uglify = require("uglify-js"),
 	_jshint = require('jshint'),
 	_handlebars = require('hbs'),
 	_fs = require('fs');

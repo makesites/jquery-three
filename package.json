@@ -14,7 +14,7 @@
 	"devDependencies" : {
 		"commander" : "~0.5",
 		"jshint" : "~0.9",
-		"uglify-js2" : "~2.1",
+		"uglify-js" : "2.x",
 		"hbs" : "~1.0"
 	}
 }
