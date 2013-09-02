@@ -1025,7 +1025,7 @@ Three.prototype.html = function(html, options){
 			self.add( attr, options );
 
 			// loop throught the children
-			//self.html( $el.html(), options );
+			self.html( $el.html(), options );
 
 		});
 
