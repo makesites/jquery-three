@@ -325,6 +325,8 @@ Three.prototype.getAttributes = function( html ){
 			for( var i in attr ){
 				if( attr[i].name && attr[i].name.search("data-") === 0 ){
 					var key = attr[i].name.replace("data-", "");
+					// #47 convert dashed to camelCase
+					key = utils.camelCase( key );
 					var val = attr[i].value;
 					// check if it's a number...
 					data[key] = ( parseInt(val, 10) ) ? parseInt(val, 10) :  val;
@@ -1546,7 +1548,14 @@ Three.prototype.setProperties = function() {
 	};
 
 // internal object of utilities
-var utils = {};
+var utils = {
+	// Convert Dashed to CamelCase
+	// based on: https://gist.github.com/tracend/5530356
+	camelCase : function( string ){
+		return  string.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
+	}
+
+};
 
 /**
  * jQuery.toSelector - get the selector text of a jQuery object
