@@ -754,6 +754,8 @@ Three.prototype.eventSubtree = function(e) {
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
 		var html = e.target.innerHTML;
+		// #46 parsing one tag at a time
+		html = $(html).html("").get(0);
 		this.append( html, { silent : true });
 	}
 };
