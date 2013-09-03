@@ -1103,6 +1103,16 @@ Three.prototype.append = function(html, options){
 	// #38 preserve chainability...
 	return this;
 };
+// return an object using its id
+Three.prototype.get = function( id ){
+
+	// find the element in the containers
+	var el = this.objects[id] || this.cameras[id] || this.scenes[id] || null;
+
+	return el;
+
+};
+
 
 find = function( query ){
 
@@ -1123,7 +1133,7 @@ fn.find = {
 
 		var id = $(this.el).find("shadow-root "+ query).attr("data-id");
 		// find the element in the containers
-		var el = this.objects[id] || this.cameras[id] || this.scenes[id];
+		var el = this.objects[id] || this.cameras[id] || this.scenes[id] || null;
 
 		return el;
 	}
