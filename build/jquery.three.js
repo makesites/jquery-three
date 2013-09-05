@@ -246,9 +246,10 @@ Three.prototype = {
 			this.cameras[i].updateProjectionMatrix();
 		}
 		// better way of targeting skybox???
-		this.active.skybox.camera.aspect = this.properties.aspect;
-		this.active.skybox.camera.updateProjectionMatrix();
-
+		if( this.active.skybox ){
+			this.active.skybox.camera.aspect = this.properties.aspect;
+			this.active.skybox.camera.updateProjectionMatrix();
+		}
 		this.renderer.setSize( this.properties.width, this.properties.height );
 	},
 
