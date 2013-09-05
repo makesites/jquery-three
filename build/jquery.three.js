@@ -1033,6 +1033,8 @@ Three.prototype.html = function(html, options){
 			attr = $.extend(attr, attributes);
 
 			self.newEl = self.target.children(":eq("+i+")");
+			// if we can't find the new element quit
+			if( !self.newEl.length ) return;
 			self.add( attr, options );
 
 			// loop throught the children
@@ -1436,7 +1438,7 @@ Three.prototype.webglCylinder = function( attributes ){
 		var geometry = new THREE.CylinderGeometry( options.radiusTop, options.radiusBottom, options.segmentsRadius, options.segmentsHeight, options.openEnded, false);
 		// make this optional?
 		//geometry.overdraw = true;
-        geometry.dynamic = true;
+		geometry.dynamic = true;
 		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
 		var mesh = new THREE.Mesh( geometry, material );
 
