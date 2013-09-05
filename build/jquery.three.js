@@ -366,7 +366,7 @@ Three.prototype.addClass = function( name ){
 
 // Public Methods
 css = function ( styles ){
-		// support more than one formats? 
+		// support more than one formats?
 		// for now expecting a straighforward object...
 		this.fn.css.set.call(this, this.last , styles);
 		// preserve chainability
@@ -384,7 +384,7 @@ fn.css = {
 			for(var r in rules) {
 				// #21 - excluding :hover styles from parsing
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
-				try{ 
+				try{
 					if(a.is(rules[r].selectorText)) {
 						o = $.extend(o, css2json(rules[r].style));
 					}
@@ -397,11 +397,11 @@ fn.css = {
 		o = $.extend(o, css2json(a.attr('style')));
 		//
 		return o;
-	}, 
+	},
 	set: function( object, css ){
 		// if the object is not valid quit...
 		if( !object || !object.id ) return;
-		
+
 		for( var attr in css ){
 			// remove prefixes
 			var key = attr.replace('-webkit-','').replace('-moz-','');
@@ -435,14 +435,14 @@ fn.css = {
 					if( object instanceof THREE.Scene){
 						//this.fn.css.skybox.call(this, css[attr]);
 						this.webglLight({color : color});
-					} else { 
+					} else {
 						object.material.color.setHex(color);
 					}
 				break;
 				// - transforms
 				case "transform":
 					var pos;
-					if(css[attr].search("translate3d") > -1 ){ 
+					if(css[attr].search("translate3d") > -1 ){
 						pos = this.fn.css.translate.call( this, css[attr] );
 						// condition the position for "bare" meshes
 						if( object instanceof THREE.Mesh && object.type != "terrain"){
@@ -451,7 +451,7 @@ fn.css = {
 							object.position.set( pos.x, pos.y, pos.z );
 						}
 					}
-					if(css[attr].search("rotate3d") > -1 ){ 
+					if(css[attr].search("rotate3d") > -1 ){
 						pos = this.fn.css.rotate.call( this,  css[attr] );
 						// condition the rotation for "bare" meshes
 						if( object instanceof THREE.Mesh && object.type != "terrain"){
@@ -460,7 +460,7 @@ fn.css = {
 							object.rotation.set( pos.x, pos.y, pos.z );
 						}
 					}
-					if(css[attr].search("scale3d") > -1 ){ 
+					if(css[attr].search("scale3d") > -1 ){
 						pos = this.fn.css.scale.call( this, css[attr] );
 						// condition the position for "bare" meshes
 						if( object instanceof THREE.Mesh && object.type != "terrain"){
@@ -499,13 +499,13 @@ fn.css = {
 					// background of a scene is a skydome...
 					if( object instanceof THREE.Scene){
 						this.fn.css.skybox.call(this, css[attr]);
-					} else if( object.type == "terrain" ){ 
+					} else if( object.type == "terrain" ){
 						this.fn.css.terrain.call(this, css[attr]);
-					} else if ( object instanceof THREE.Mesh ) { 
+					} else if ( object instanceof THREE.Mesh ) {
 						this.fn.css.texture.call(this, object, css[attr]);
-					} else if ( object instanceof THREE.Object3D && object.children.length) { 
+					} else if ( object instanceof THREE.Object3D && object.children.length) {
 						// potentially the above condition can be removed if the ids are assigned properly in the markup...
-						try { 
+						try {
 							// find the child...
 							var mesh =  object.children[0];
 							this.fn.css.texture.call(this, mesh, css[attr]);
@@ -515,13 +515,13 @@ fn.css = {
 					}
 				break;
 			}
-			
+
 		}
-		
+
 	},
-	
+
 	rotate: function( attr ){
-		
+
 		var rot = {};
 		var val;
 		// only supporting rotate3d for now...
@@ -536,15 +536,15 @@ fn.css = {
 				y: parseFloat( val[1], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180),
 				z: parseFloat( val[2], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180)
 			};
-			
+
 		}
-		
+
 		return rot;
-		
-	}, 
-	
+
+	},
+
 	translate: function( attr ){
-		
+
 		var pos = {};
 		// only supporting translate3d for now...
 		if( attr.search("translate3d") > -1 ){
@@ -558,15 +558,15 @@ fn.css = {
 				y: parseFloat( val[1], 10 ) || 0,
 				z: parseFloat( val[2], 10 ) || 0
 			};
-			
+
 		}
-		
+
 		return pos;
-		
-	}, 
-	
+
+	},
+
 	scale: function( attr ){
-		
+
 		var size = {};
 		// only supporting rotate3d for now...
 		if( attr.search("scale3d") > -1 ){
@@ -580,97 +580,97 @@ fn.css = {
 				y: parseFloat( val[1], 10 ) || 0,
 				z: parseFloat( val[2], 10 ) || 0
 			};
-			
+
 		}
-		
+
 		return size;
-		
-	}, 
-	
+
+	},
+
 	texture: function( el, attr ){
 		var map = attr.replace(/\s|url\(|\)/g, "");
 		var material = this.webglMaterial({ map :  map });
 		el.material = material;
-	}, 
-	
+	},
+
 	terrain: function( attr ){
 		var object = this.last;
-		
+
 		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
 		if(img instanceof Array){
 			for( var i in img ){
-				
+
 				if( img[i].search("heightmap") > -1  ){
-					
+
 					var heightmapTexture = THREE.ImageUtils.loadTexture( img[i] );
 					//var heightmapTexture = this.webglTexture( img[i] );
 					object.material.uniforms.tDisplacement.value = heightmapTexture;
 					object.material.uniforms.uDisplacementScale.value = 375;
-					// heightmap also the second diffuse map? 
+					// heightmap also the second diffuse map?
 					var diffuseTexture2 = heightmapTexture;
 					diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-					
+
 					object.material.uniforms.tDiffuse2.value = diffuseTexture2;
 					object.material.uniforms.enableDiffuse2.value = true;
-		
+
 				}
 				if( img[i].search("diffuse") > -1  ){
-					
+
 					var diffuseTexture1 = THREE.ImageUtils.loadTexture( img[i] );
 					//var diffuseTexture1 = this.webglTexture( img[i] );
 					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-					
+
 					object.material.uniforms.tDiffuse1.value = diffuseTexture1;
 					object.material.uniforms.enableDiffuse1.value = true;
-					
+
 				}
 				if( img[i].search("specular") > -1 ){
-					
+
 					var specularMap = THREE.ImageUtils.loadTexture( img[i] );
 					//var specularMap = this.webglTexture( img[i] );
 					specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
-					
+
 					object.material.uniforms.tSpecular.value = specularMap;
 					object.material.uniforms.enableSpecular.value = true;
-					
+
 				}
 			}
 		} else {
 			// one image... which texture is it?...
 		}
-		
+
 		/*
-		
-		leftovers ( normal and detail textures) 
-		
+
+		leftovers ( normal and detail textures)
+
 		//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-		
+
 		//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
 		//uniformsTerrain[ "uNormalScale" ].value = 1;
-		
+
 		//uniformsTerrain[ "tDetail" ].value = detailTexture;
-		
+
 		//uniformsTerrain[ "uShininess" ].value = 30;
 
 		*/
-	}, 
-	
-	
+	},
+
+
 	skybox: function( attr ){
-		
+
 		// remove any whitespace, the url(..) and
 		// attempt to break it into an array
 		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
 		if(img instanceof Array){
 			// expext a six-pack of images
 			this.addSkybox( img );
-			
+
 		} else {
 			// this is one image... not implemented yet
 		}
-		
+
 	}
-	
+
 };
 
 	/*
@@ -679,10 +679,10 @@ fn.css = {
 		for( var attr in css ){
 			// supported attributes
 			switch(attr){
-				
+
 			}
 		}
-	}, 
+	},
 	*/
 
 
@@ -702,7 +702,7 @@ var css2json = function (css){
 			}
 		}
 	} else if(typeof css == "string") {
-		css = css.split("; ");          
+		css = css.split("; ");
 		for (var j in css) {
 			var l = css[j].split(": ");
 			s[l[0].toLowerCase()] = (l[1]);
@@ -755,9 +755,12 @@ Three.prototype.eventSubtree = function(e) {
 
 	if (e.target.innerHTML.length > 0) {
 		// Handle new content
-		var html = e.target.innerHTML;
+		//var html = e.target.innerHTML;
+		var html = $(e.target).html();
+		//this.newEl = $(e.target).children().last();
 		// #46 parsing one tag at a time
-		html = $(html).html("").get(0);
+		//html = $(html).html("").get(0);
+		//this.newEl = $(html).last();
 		this.append( html, { silent : true });
 	}
 };
@@ -832,8 +835,9 @@ Three.prototype.add = function( attributes, options ){
 			var $html;
 			if( options.silent ){
 				// target should be already set?
-				$html = $(self.target).find( attributes.type );
+				//$html = $(self.target).find( attributes.type );
 				// add data-id to existing containers
+				$html = self.newEl;
 				$html.attr("data-id" , attributes["data-id"]);
 			} else {
 				$html = self.createHTML( attributes );
@@ -1013,6 +1017,8 @@ Three.prototype.html = function(html, options){
 
 			// exit if there is no parent set
 			if( !$el ) return;
+			// if there's a data id this is an attribute change we don't want to monitor
+			if( typeof $el.attr("data-id") !== "undefined" ) return;
 
 			var attr = {};
 			// use the active scene if not specified
@@ -1026,6 +1032,7 @@ Three.prototype.html = function(html, options){
 			//
 			attr = $.extend(attr, attributes);
 
+			self.newEl = self.target.children(":eq("+i+")");
 			self.add( attr, options );
 
 			// loop throught the children
