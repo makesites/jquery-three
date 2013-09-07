@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.6.5 (Sat, 07 Sep 2013 05:21:50 GMT)
+ * Version: 0.7.0 (Sat, 07 Sep 2013 05:23:57 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
