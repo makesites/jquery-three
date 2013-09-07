@@ -2,7 +2,10 @@
 	"private" : true,
 	"name" : "jquery.three",
 	"version" : "0.6.5",
-	"licenses": [
+	"author" : "makesites",
+	"homepage" : "http://github.com/makesites/jquery-three",
+	"description" : "jQuery Three() - jQuery extension with 3D methods (using Three.js)",
+	"licenses" : [
 		{
 		"type": "MIT License",
 		"url": "http://makesites.org/licenses/MIT"

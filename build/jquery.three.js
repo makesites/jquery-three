@@ -1,11 +1,15 @@
 /**
-* jQuery Three() - jQuery extension with 3D methods (using Three.js)
-* Created by: Makis Tracend (@tracend)
-*
-* Copyright © 2013 Makesites.org
-* Licensed under the MIT license
-*
-**/
+ * @name jquery.three
+ * jQuery Three() - jQuery extension with 3D methods (using Three.js)
+ * Version: 0.6.5 (Sat, 07 Sep 2013 05:21:50 GMT)
+ *
+ * @author makesites
+ * Created by: Makis Tracend (@tracend)
+ *
+ * Homepage: http://github.com/makesites/jquery-three
+ * @license MIT License
+ */
+
 
 // RequestAnimationFrame shim - Source: http://paulirish.com/2011/requestanimationframe-for-smart-animating/
 window.requestAnimFrame = ( function( callback ) {
