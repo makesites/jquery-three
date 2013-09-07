@@ -3,58 +3,58 @@
 	<head>
 		<title>jQuery Three :: Earth</title>
 		<meta charset="utf-8">
-        
+
 		<style type="text/css">
 			body, html{ margin: 0; padding: 0; width: 100%; height: 100%; }
-			
+
 			#main {
-				width: 100%; 
+				width: 100%;
 				height: 100%;
 			}
-			
+
 			scene {
 				background-image: url(assets/img/skybox/stars/px.jpg), url(assets/img/skybox/stars/nx.jpg), url(assets/img/skybox/stars/py.jpg), url(assets/img/skybox/stars/ny.jpg), url(assets/img/skybox/stars/pz.jpg), url(assets/img/skybox/stars/nz.jpg);
 			}
-			
+
 			#main-cam {
-				-webkit-transform: translate3d(0, 0, 1000px);	
+				-webkit-transform: translate3d(0, 0, 1000px);
 				/* -webkit-backface-visibility: hidden;
-  				-webkit-perspective: 1000; */
+				-webkit-perspective: 1000; */
 			}
-			
+
 			.moon {
 				background-image: url(assets/img/maps/moon_1k.jpg);
 			}
-			
+
 			.earth {
 				background-image: url(assets/img/maps/earth_1k.jpg);
 			}
-			
+
 		</style>
 
 	</head>
 
 	<body>
-    
+
 		<div id="main">
-        	<scene id="first">
-            	<camera id="main-cam" class="perspective" data-fov="30" data-far="4000"></camera>
-                <sphere class="earth" data-radius="200" data-segments="40" data-rings="30"></sphere>
-            </scene>
-        </div>
-        
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-        <script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
+			<scene id="first">
+				<camera id="main-cam" class="perspective" data-fov="30" data-far="4000"></camera>
+				<sphere class="earth" data-radius="200" data-segments="40" data-rings="30"></sphere>
+			</scene>
+		</div>
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
 		<script type="text/javascript" src="../build/jquery.three.js"></script>
-        <script type="text/javascript"> 
-			
+		<script type="text/javascript">
+
 			// initiate 3d environemnt
 			$("#main").three();
-			
+
 			// add event listener
 			$("#main").on("update", LookArround);
-				
+
 		</script>
-        
+
 	</body>
 </html>

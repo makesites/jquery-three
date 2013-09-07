@@ -3,88 +3,88 @@
 	<head>
 		<title>jQuery Three :: FPS (with dynamic generation)</title>
 		<meta charset="utf-8">
-        
+
 		<style type="text/css">
 			body, html{ margin: 0; padding: 0; width: 100%; height: 100%; }
-			
+
 			#main {
-				width: 100%; 
+				width: 100%;
 				height: 100%;
 			}
-			
+
 			#main-cam {
-				-webkit-transform: translate3d(0, 1px, 0);	
+				-webkit-transform: translate3d(0, 1px, 0);
 				/* -webkit-backface-visibility: hidden;
-  				-webkit-perspective: 1000; */
+				-webkit-perspective: 1000; */
 			}
-			
+
 			plane {
 				color: #cde;
 				width: 10000px;
 				height: 10000px;
-				-webkit-transform: translate3d(0, -1px, 0) rotate3d(1, 0, 0, -90deg);	
-				
+				-webkit-transform: translate3d(0, -1px, 0) rotate3d(1, 0, 0, -90deg);
+
 			}
-			
+
 			.box {
 				color: #999;
 				width: 1px;
 				height: 1px;
 				background-image: url("assets/img/1m_grid.jpg");
 			}
-			
-			
+
+
 		</style>
 
 	</head>
 
 	<body>
-    
+
 		<div id="main">
-        	<scene id="first">
-            	<camera id="main-cam" class="perspective" data-fov="30" data-far="8000"></camera>
-                <plane></plane>
-            </scene>
-        </div>
-        
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
+			<scene id="first">
+				<camera id="main-cam" class="perspective" data-fov="30" data-far="8000"></camera>
+				<plane></plane>
+			</scene>
+		</div>
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
 		<script type="text/javascript" src="assets/js/helpers/walkaround.js"></script>
 		<script type="text/javascript" src="../build/jquery.three.js"></script>
-        
+
 		<script id="box-template" type="text/x-handlebars-template">
-            <cube class="box" style="-webkit-transform: translate3d({{random 10}}, 0, {{random 10}})"></cube>
-        </script>
-        <script type="text/javascript"> 
-			
+			<cube class="box" style="-webkit-transform: translate3d({{random 10}}, 0, {{random 10}})"></cube>
+		</script>
+		<script type="text/javascript">
+
 			// load template
 			var template = Handlebars.compile( $("#box-template").html() );
-			
+
 			// initiate 3d environment
 			$("#main").three({
 				"deps" : {
 					"FirstPersonControls" : "https://raw.github.com/mrdoob/three.js/master/examples/js/controls/FirstPersonControls.js"
 				}
 			}, function( $3d ){
-				
+
 				// repeat 100 times
 				for( var i=0; i < 100; i++){
 					var html = template({});
 					$3d.append( html );
 				}
-				
+
 				// initialize walking
 				WalkAround.init( $3d );
 			});
-			
+
 			// add event listener
 			$("#main").on("update", WalkAround.update);
-				
+
 			// helpers
 			Handlebars.registerHelper("random", function(num){
 				return (Math.round( num * (Math.random() - 0.5 ) )*4) +"px";
 			});
 		</script>
-        
+
 	</body>
 </html>
