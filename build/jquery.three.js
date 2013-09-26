@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Sat, 07 Sep 2013 05:23:57 GMT)
+ * Version: 0.7.0 (Thu, 26 Sep 2013 06:20:31 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -831,7 +831,7 @@ Three.prototype.add = function( attributes, options ){
 			// add to scene
 			if( attributes.type == "scene"){
 				self.active.scene = object;
-			} else {
+			} else if( self.active.scene ){
 				self.active.scene.add( object );
 			}
 			// keep a reference of the object id
