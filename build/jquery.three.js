@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Mon, 30 Sep 2013 05:58:46 GMT)
+ * Version: 0.7.0 (Mon, 30 Sep 2013 06:55:42 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -776,7 +776,7 @@ Three.prototype.eventSubtree = function(e) {
 		// #46 parsing one tag at a time
 		//html = $(html).html("").get(0);
 		//this.newEl = $(html).last();
-		this.append( html, { silent : true });
+		this.append( html, { silent : true, target: this.target });
 	}
 };
 
@@ -1024,7 +1024,7 @@ Three.prototype.html = function(html, options){
 		var self = this;
 		// fallbacks
 		options = options || {};
-
+		var target = options.target || this.target;
 		// loop throught the elements of the dom
 		$(html).filter('*').each(function(i, el){
 			// is this a jQuery bug?
@@ -1047,7 +1047,7 @@ Three.prototype.html = function(html, options){
 			//
 			attr = $.extend(attr, attributes);
 
-			self.newEl = self.target.children(":eq("+i+")");
+			self.newEl = target.children(":eq("+i+")");
 			// if we can't find the new element quit
 			if( !self.newEl.length ) return;
 			self.add( attr, options );
