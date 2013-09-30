@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Thu, 26 Sep 2013 06:20:31 GMT)
+ * Version: 0.7.0 (Mon, 30 Sep 2013 05:58:46 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -61,7 +61,7 @@ var fn = {
 	Three = function( element, options, callback ){
 
 		var self = this;
-		this.el = element;
+		this.el = this.setEl( element );
 		this.options = $.extend(true, defaults, options);
 		// main buckets
 		this.objects = {};
@@ -284,6 +284,16 @@ Three.prototype = {
 				callback();
 			}
 		});
+	},
+
+	setEl: function( el ){
+		// add an id if not available
+		var id = $(this).attr('id');
+		// For some browsers, `attr` is undefined; for others `attr` is false.  Check for both.
+		if (typeof id === "undefined" || id === false) {
+			$(el).addClass("3d-" + utils.unid() );
+		}
+		return el;
 	}
 
 
@@ -1577,8 +1587,12 @@ var utils = {
 	// based on: https://gist.github.com/tracend/5530356
 	camelCase : function( string ){
 		return  string.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
-	}
+	},
 
+	// unique (but not universal) id generator
+	unid: function(){
+		return Math.round( Math.random() * (new Date()).getTime() );
+	}
 };
 
 /**
