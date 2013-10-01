@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Tue, 01 Oct 2013 03:26:43 GMT)
+ * Version: 0.7.0 (Mon, 30 Sep 2013 07:45:27 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -119,7 +119,9 @@ Three.prototype = {
 		$(this.el).html("<shadow-root></shadow-root>");
 		this.parent = $(this.el).find("shadow-root");
 		this.target = this.parent;
-		this.html( html );
+		// trigger the initial markup
+		this.parent.html(html);
+		this.append( this.parent[0], { traverse: true });
 
 		//document.body.appendChild( this.renderer.domElement );
 		$( this.renderer.domElement ).appendTo( this.el );
@@ -730,7 +732,7 @@ var css2json = function (css){
 
 Three.prototype.animate = function(){
 		//this.mesh.rotation.z = Date.now() / 1000;
-		
+
 	};
 
 // watch an element for changes
@@ -760,24 +762,7 @@ Three.prototype.watch = function( el ) {
 Three.prototype.eventSubtree = function(e) {
 	e.stopPropagation();
 
-	// variables
-	var $root = $( $(this.el).toSelector() +" shadow-root" ).get(0);
-	var $target = $(e.target).get(0);
-
-	// don't go above the root
-	this.parent = ( $root == $target ) ? $(e.target) : $(e.target).parent();
-	this.target = $(e.target);
-
-	if (e.target.innerHTML.length > 0) {
-		// Handle new content
-		//var html = e.target.innerHTML;
-		var html = $(e.target).html();
-		//this.newEl = $(e.target).children().last();
-		// #46 parsing one tag at a time
-		//html = $(html).html("").get(0);
-		//this.newEl = $(html).last();
-		this.append( html, { silent : true, target: this.target, traverse: false, watch: true });
-	}
+	this.append(e.target);
 };
 
 // - updated attribute
@@ -1051,7 +1036,7 @@ Three.prototype.html = function(html, options){
 
 			self.newEl = options.target.children(":eq("+i+")");
 			// if we can't find the new element quit
-			if( options.watch && !self.newEl.length ) return;
+			if( !self.newEl.length ) return;
 			self.add( attr, options );
 
 			// loop through the children (only if el not empty)
@@ -1120,13 +1105,35 @@ Three.prototype.createHTML = function( options ){
 		return $tag;
 	};
 
-Three.prototype.append = function(html, options){
+Three.prototype.append = function(el, options){
+	// fallback
 	options = options || {};
+	// variables
+	var $root = $( $(this.el).toSelector() +" shadow-root" ).get(0);
+	var $target = $(el).get(0);
+
+	// don't go above the root
+	this.parent = ( $root == $target ) ? $(el) : $(el).parent();
+	this.target = $(el);
+
+	if (el.innerHTML.length > 0) {
+		// Handle new content
+		//var html = e.target.innerHTML;
+		var html = $(el).html();
+		//this.newEl = $(e.target).children().last();
+		// #46 parsing one tag at a time
+		//html = $(html).html("").get(0);
+		//this.newEl = $(html).last();
+		options.silent = true;
+		options.target = this.target;
+		options.traverse = options.traverse || false;
+		this.html( html, options );
+	}
 	// pickup active scene
 	//var scene = this.active.scene;
 	// add the submitted markup (validation?)
 	//$(this.el).find("[data-id='"+ scene.id +"']").append( html );
-	this.html( html, options );
+
 	// #38 preserve chainability...
 	return this;
 };
