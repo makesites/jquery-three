@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Tue, 01 Oct 2013 03:26:43 GMT)
+ * Version: 0.7.0 (Wed, 02 Oct 2013 06:48:53 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -982,19 +982,20 @@ Three.prototype.addSkybox = function( img ){
 
 				//var shader = THREE.ShaderUtils.lib.cube;
 				var shader = THREE.ShaderLib.cube;
-				shader.uniforms.tCube.value = reflectionCube;
+				var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+				uniforms.tCube.value = reflectionCube;
 
 				var material = new THREE.ShaderMaterial( {
 
 					fragmentShader: shader.fragmentShader,
 					vertexShader: shader.vertexShader,
-					uniforms: shader.uniforms,
+					uniforms: uniforms,
 					depthWrite: false,
 					side: THREE.BackSide
 
 				});
 
-				mesh = new THREE.Mesh( new THREE.CubeGeometry( 100, 100, 100 ), material );
+				var mesh = new THREE.Mesh( new THREE.CubeGeometry( 100, 100, 100 ), material );
 
 				scene.add( mesh );
 
@@ -1003,7 +1004,6 @@ Three.prototype.addSkybox = function( img ){
 					scene : scene,
 					camera : camera
 				};
-
 	};
 
 Three.prototype.addTerrain = function( obj ){
