@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Wed, 02 Oct 2013 06:48:53 GMT)
+ * Version: 0.7.0 (Thu, 03 Oct 2013 03:45:23 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -55,7 +55,8 @@ var fn = {
 		deps : {
 			"THREE" : "https://raw.github.com/mrdoob/three.js/master/build/three.min.js"
 			//"FresnelShader" : ""
-		}
+		},
+		paused: false
 	};
 
 	Three = function( element, options, callback ){
@@ -184,7 +185,8 @@ Three.prototype = {
 		var self = this;
 		// update vars for objects
 		//
-		this.render();
+		// skip render if paused
+		if( !this.options.paused ) this.render();
 		// #43 - calculate framerate
 		var now = new Date();
 		if( this.frame.date.getSeconds() === now.getSeconds() ){
