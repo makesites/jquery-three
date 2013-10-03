@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Thu, 03 Oct 2013 03:45:23 GMT)
+ * Version: 0.7.0 (Thu, 03 Oct 2013 04:00:57 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -63,7 +63,7 @@ var fn = {
 
 		var self = this;
 		this.el = this.setEl( element );
-		this.options = $.extend(true, defaults, options);
+		this.options = $.extend(true, {}, defaults, options);
 		// main buckets
 		this.objects = {};
 		this.scenes = {};
