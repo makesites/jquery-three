@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Thu, 03 Oct 2013 04:00:57 GMT)
+ * Version: 0.7.0 (Fri, 04 Oct 2013 08:22:58 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -850,11 +850,11 @@ Three.prototype.add = function( attributes, options ){
 			attributes["data-id"] = object.id || false;
 			// create the tag in the shadow dom
 			var $html;
-			if( options.silent ){
+			if( options.silent && attributes.el){
 				// target should be already set?
 				//$html = $(self.target).find( attributes.type );
 				// add data-id to existing containers
-				$html = self.newEl;
+				$html = attributes.el;
 				$html.attr("data-id" , attributes["data-id"]);
 			} else {
 				$html = self.createHTML( attributes );
@@ -1051,9 +1051,9 @@ Three.prototype.html = function(html, options){
 			//
 			attr = $.extend(attr, attributes);
 
-			self.newEl = options.target.children(":eq("+i+")");
+			attr.el = options.target.children(":eq("+i+")");
 			// if we can't find the new element quit
-			if( options.watch && !self.newEl.length ) return;
+			if( options.watch && !attr.el.length ) return;
 			self.add( attr, options );
 
 			// loop through the children (only if el not empty)
