@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.7.0 (Fri, 04 Oct 2013 08:22:58 GMT)
+ * Version: 0.7.0 (Sun, 06 Oct 2013 10:36:11 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -823,7 +823,7 @@ Three.prototype.add = function( attributes, options ){
 			// add to the relevant bucket
 			var container = self.groups[ attributes.type ] || false;
 			// create object container only for primitives...
-			if( container == "objects" ){
+			if( container == "objects" && webgl instanceof THREE.Mesh ){
 				// create new object
 				object = new THREE.Object3D();
 				object.add(webgl);
