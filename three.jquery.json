@@ -1,6 +1,6 @@
 {
 	"name": "three",
-	"version": "0.6.5",
+	"version": "0.8.0",
 	"title": "jQuery Three",
 	"description": "A plugin / extension of the jQuery API for 3d objects (using Three.js)",
 	"keywords": [
@@ -32,6 +32,6 @@
 		}
 	],
 	"dependencies": {
-		"jquery": "~1.8.2"
+		"jquery": "~2.0.3"
 	}
 }
