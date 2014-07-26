@@ -13,6 +13,7 @@ Effectively it provides a higher level api that abstracts Three.js methods to kn
 * [First Person controls](http://makesites.org/jquery-three/examples/fps.html)
 * [Earth Texture](http://makesites.org/jquery-three/examples/earth.html)
 * [Append with Handlebars,js](http://makesites.org/jquery-three/examples/handlebars.html)
+* [Binary Loader](http://makesites.org/jquery-three/examples/binary.html)
 * [VR shader](http://makesites.org/jquery-three/examples/vr.html)
 
 
