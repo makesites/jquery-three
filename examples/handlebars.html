@@ -42,15 +42,23 @@
 			</scene>
 		</div>
 
+		<!-- deps -->
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
-		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
+		<script type="text/javascript" src="assets/js/libs/three.min.js"></script>
+
+		<!-- lib -->
 		<script type="text/javascript" src="../build/jquery.three.js"></script>
 
+		<!-- helpers -->
+		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
+
+		<!-- template -->
 		<script id="sphere-template" type="text/x-handlebars-template">
 			<sphere class="circle" data-radius="100" data-segments="40" data-rings="30" style="color: {{color}}; -webkit-transform: translate3d( {{random 1000}},  {{random 1000}}, {{random 1000}});"></sphere>
 		</script>
 
+		<!-- logic -->
 		<script type="text/javascript">
 
 			// load template

@@ -47,14 +47,23 @@
 			</scene>
 		</div>
 
+		<!-- deps -->
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js"></script>
-		<script type="text/javascript" src="assets/js/helpers/walkaround.js"></script>
+		<script type="text/javascript" src="assets/js/libs/three.min.js"></script>
+
+		<!-- lib -->
 		<script type="text/javascript" src="../build/jquery.three.js"></script>
 
+		<!-- helpers -->
+		<script type="text/javascript" src="assets/js/helpers/walkaround.js"></script>
+
+		<!-- template -->
 		<script id="box-template" type="text/x-handlebars-template">
 			<cube class="box" style="-webkit-transform: translate3d({{random 10}}, 0, {{random 10}})"></cube>
 		</script>
+
+		<!-- logic -->
 		<script type="text/javascript">
 
 			// load template
@@ -63,7 +72,7 @@
 			// initiate 3d environment
 			$("#main").three({
 				"deps" : {
-					"FirstPersonControls" : "https://raw.github.com/mrdoob/three.js/master/examples/js/controls/FirstPersonControls.js"
+					"FirstPersonControls" : "assets/js/libs/FirstPersonControls.js"
 				}
 			}, function( $3d ){
 
