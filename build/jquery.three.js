@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Sat, 30 Nov 2013 10:20:34 GMT)
+ * Version: 0.8.0 (Sat, 26 Jul 2014 09:19:41 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -997,7 +997,7 @@ Three.prototype.addSkybox = function( img ){
 
 				});
 
-				var mesh = new THREE.Mesh( new THREE.CubeGeometry( 100, 100, 100 ), material );
+				var mesh = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100 ), material );
 
 				scene.add( mesh );
 
@@ -1427,7 +1427,7 @@ Three.prototype.webglCube = function( attributes ){
 
 		var options = $.extend(defaults, attributes);
 
-		var geometry = new THREE.CubeGeometry( options.width, options.height, options.depth);
+		var geometry = new THREE.BoxGeometry( options.width, options.height, options.depth);
 		// make this optional?
 		geometry.dynamic = true;
 		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
