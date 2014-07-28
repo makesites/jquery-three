@@ -1,18 +1,18 @@
 {
 
-    "metadata" :
-    {
-        "formatVersion" : 3.1,
-        "sourceFile"    : "palm.obj",
-        "generatedBy"   : "OBJConverter",
-        "vertices"      : 534,
-        "faces"         : 398,
-        "normals"       : 490,
-        "uvs"           : 147,
-        "materials"     : 2
-    },
+	"metadata" :
+	{
+		"formatVersion" : 3.1,
+		"sourceFile"    : "palm.obj",
+		"generatedBy"   : "OBJConverter",
+		"vertices"      : 534,
+		"faces"         : 398,
+		"normals"       : 490,
+		"uvs"           : 147,
+		"materials"     : 2
+	},
 
-    "materials": [{
+	"materials": [{
 	"DbgColor" : 15658734,
 	"DbgIndex" : 0,
 	"DbgName" : "trunk",
@@ -20,8 +20,8 @@
 	"colorDiffuse" : [1.0, 1.0, 1.0],
 	"colorSpecular" : [1.0, 1.0, 1.0],
 	"illumination" : 2,
-	"mapBump" : "palm_bark_norm.png",
-	"mapDiffuse" : "palm_bark.png",
+	"mapBump" : "maps/palm_bark_norm.jpg",
+	"mapDiffuse" : "maps/palm_bark.jpg",
 	"specularCoef" : 8.0,
 	"transparent" : false
 	},
@@ -34,12 +34,12 @@
 	"colorDiffuse" : [1.0, 1.0, 1.0],
 	"colorSpecular" : [1.0, 1.0, 1.0],
 	"illumination" : 2,
-	"mapDiffuse" : "palm_leafs.png",
-	"specularCoef" : 8.0, 
+	"mapDiffuse" : "maps/palm_leafs.png",
+	"specularCoef" : 8.0,
 	"transparency" : 1.0,
 	"transparent" : true
 	}],
 
-    "buffers": "palm.bin"
+	"buffers": "mesh.bin"
 
 }
