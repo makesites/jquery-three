@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>jQuery Three :: Skysphere</title>
+		<meta charset="utf-8">
+
+		<style type="text/css">
+			body, html{ margin: 0; padding: 0; width: 100%; height: 100%; }
+
+			#main {
+				width: 100%;
+				height: 100%;
+			}
+
+			.room {
+				background-image: url(assets/img/skysphere.jpg);
+			}
+
+			#main-cam {
+				-webkit-transform: translate3d( 0, 0, 2000px);
+				/* -webkit-backface-visibility: hidden;
+				-webkit-perspective: 1000; */
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+		<div id="main">
+			<scene id="first" class="room">
+				<camera id="main-cam" class="perspective" data-far="5000"></camera>
+			</scene>
+		</div>
+
+		<!-- deps -->
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script type="text/javascript" src="assets/js/libs/three.min.js"></script>
+
+		<!-- lib -->
+		<script type="text/javascript" src="../build/jquery.three.js"></script>
+
+		<!-- helpers -->
+		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
+
+		<!-- logic -->
+		<script type="text/javascript">
+
+			// initiate 3d environment
+			$("#main").three();
+
+			// add event listener
+			$("#main").on("update", LookArround);
+
+		</script>
+
+	</body>
+</html>

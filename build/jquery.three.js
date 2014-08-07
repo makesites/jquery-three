@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Thu, 07 Aug 2014 06:43:41 GMT)
+ * Version: 0.8.0 (Thu, 07 Aug 2014 08:06:41 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -991,24 +991,30 @@ Three.prototype.addAsset = function( obj ){
 
 Three.prototype.addSkybox = function( img ){
 
-				// does this camera have set values??
-				var camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 100 );
-
 				var scene = new THREE.Scene();
-				var geometry, material;
+				var camera, geometry, material;
 
 				if( img.length == 1){
+
+					camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 1100 );
+					camera.target = new THREE.Vector3( 0, 0, 0 );
+
 					// skysphere
 					geometry = new THREE.SphereGeometry( 500, 60, 40 );
 					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
 
 					material = new THREE.MeshBasicMaterial( {
-						map: THREE.ImageUtils.loadTexture( img )
+						map: THREE.ImageUtils.loadTexture( img[0] )
 					});
+
 				} else {
+
 					// skybox
 					var reflectionCube = THREE.ImageUtils.loadTextureCube( img );
 					reflectionCube.format = THREE.RGBFormat;
+
+					// does this camera have set values??
+					camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 100 );
 
 					//var shader = THREE.ShaderUtils.lib.cube;
 					var shader = THREE.ShaderLib.cube;
