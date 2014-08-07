@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Wed, 30 Jul 2014 02:45:04 GMT)
+ * Version: 0.8.0 (Thu, 07 Aug 2014 06:43:41 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -995,26 +995,39 @@ Three.prototype.addSkybox = function( img ){
 				var camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 100 );
 
 				var scene = new THREE.Scene();
+				var geometry, material;
 
-				var reflectionCube = THREE.ImageUtils.loadTextureCube( img );
-				reflectionCube.format = THREE.RGBFormat;
+				if( img.length == 1){
+					// skysphere
+					geometry = new THREE.SphereGeometry( 500, 60, 40 );
+					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
 
-				//var shader = THREE.ShaderUtils.lib.cube;
-				var shader = THREE.ShaderLib.cube;
-				var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-				uniforms.tCube.value = reflectionCube;
+					material = new THREE.MeshBasicMaterial( {
+						map: THREE.ImageUtils.loadTexture( img )
+					});
+				} else {
+					// skybox
+					var reflectionCube = THREE.ImageUtils.loadTextureCube( img );
+					reflectionCube.format = THREE.RGBFormat;
 
-				var material = new THREE.ShaderMaterial( {
+					//var shader = THREE.ShaderUtils.lib.cube;
+					var shader = THREE.ShaderLib.cube;
+					var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+					uniforms.tCube.value = reflectionCube;
 
-					fragmentShader: shader.fragmentShader,
-					vertexShader: shader.vertexShader,
-					uniforms: uniforms,
-					depthWrite: false,
-					side: THREE.BackSide
+					material = new THREE.ShaderMaterial( {
 
-				});
+						fragmentShader: shader.fragmentShader,
+						vertexShader: shader.vertexShader,
+						uniforms: uniforms,
+						depthWrite: false,
+						side: THREE.BackSide
 
-				var mesh = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100 ), material );
+					});
+					geometry = new THREE.BoxGeometry( 100, 100, 100 );
+				}
+
+				var mesh = new THREE.Mesh( geometry, material );
 
 				scene.add( mesh );
 
