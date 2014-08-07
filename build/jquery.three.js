@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Mon, 28 Jul 2014 08:22:07 GMT)
+ * Version: 0.8.0 (Wed, 30 Jul 2014 02:45:04 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -455,7 +455,7 @@ fn.css = {
 						//this.fn.css.skybox.call(this, css[attr]);
 						this.webglLight({color : color});
 					} else {
-						object.material.color.setHex(color);
+						setColor( object, color );
 					}
 				break;
 				// - transforms
@@ -729,6 +729,21 @@ var css2json = function (css){
 	}
 	return s;
 };
+
+function setColor( object, color ){
+	object = object || {};
+	// prerequisite
+	if( !object.material ) return; // create material instead?
+	// in case we have more than one materials
+	if( object.material.materials ){
+		// check it it's an array first?
+		for(var i in object.material.materials ){
+			object.material.materials[i].color.setHex(color);
+		}
+	} else {
+		object.material.color.setHex(color);
+	}
+}
 
 
 
