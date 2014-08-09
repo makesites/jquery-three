@@ -36,6 +36,16 @@ $("container").three( options, callback );
 Read the [wiki](https://github.com/makesites/jquery-three/wiki) docs for more details on the [methods](https://github.com/makesites/jquery-three/wiki/Methods) and [tag support](https://github.com/makesites/jquery-three/wiki/Tags).
 
 
+## Options
+
+There are the setup options used when initiating the ```.three()``` method:
+
+* **alpha**: (boolean, default: true) Renders the WebGL canvas transparent so you can stack other elements behind it.
+* **deps**: (object, default: {}) Listing dependency scripts loaded as extensions of THREE.js
+* **paused**: (boolean, default: false) Start with a paused loop - or set as a flag to pause anytime.
+* **watch**: (boolean, default: false) If set it monitors the DOM for updates and syncs the changes with THREE.js
+
+
 ## Credits
 
 Created by [Makis Tracend](http://github.com/tracend) [ [full list of contributors](https://github.com/makesites/jquery-three/graphs/contributors) ]
