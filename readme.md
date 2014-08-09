@@ -10,6 +10,7 @@ Effectively it provides a higher level api that abstracts Three.js methods to kn
 ## Examples
 
 * [Skybox](http://makesites.org/jquery-three/examples/skybox.html)
+* [Skysphere](http://makesites.org/jquery-three/examples/skysphere.html)
 * [First Person controls](http://makesites.org/jquery-three/examples/fps.html)
 * [Earth Texture](http://makesites.org/jquery-three/examples/earth.html)
 * [Append with Handlebars,js](http://makesites.org/jquery-three/examples/handlebars.html)
