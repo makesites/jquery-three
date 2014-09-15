@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Mon, 15 Sep 2014 04:16:43 GMT)
+ * Version: 0.8.0 (Mon, 15 Sep 2014 05:14:24 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -559,7 +559,7 @@ fn.css = {
 
 		var rot = {};
 		var val;
-		// only supporting rotate3d for now...
+		//
 		if( attr.search("rotate3d") > -1 ){
 			// replace all the bits we don't need
 			val = attr.match(/rotate3d\(([\s\S]*?)\)/gi);
@@ -572,9 +572,8 @@ fn.css = {
 				z: parseFloat( val[2], 10 ) * parseFloat( val[3], 10 ) * (Math.PI/180)
 			};
 
-		}
+		} else if( attr.search("rotateX") > -1 ){
 		// axis based rotation
-		if( attr.search("rotateX") > -1 ){
 			val = attr.match(/rotateX\(([\s\S]*?)\)/gi);
 			val = val[0].replace(/rotateX\(|deg|\)| /gi, "").
 			rot = {
