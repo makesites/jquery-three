@@ -30,6 +30,27 @@
 				background-image: url(assets/img/maps/earth_1k.jpg);
 			}
 
+			@-moz-keyframes rotate360 {
+				from { -moz-transform: rotateY(0deg); }
+				to { -moz-transform: rotateY(360deg); }
+			}
+
+			@-webkit-keyframes rotate360 {
+				from { -webkit-transform: rotateY(0deg); }
+				to { -webkit-transform: rotateY(360deg); }
+			}
+
+			@keyframes rotate360 {
+				from { transform:rotateY(0deg); }
+				to { transform:rotateY(360deg); }
+			}
+
+			.rotating {
+				-webkit-animation: rotate360 60s linear infinite;
+				-moz-animation: rotate360 60s linear infinite;
+				animation: rotate360 60s linear infinite;
+			}
+
 		</style>
 
 	</head>
@@ -39,7 +60,7 @@
 		<div id="main">
 			<scene id="first">
 				<camera id="main-cam" class="perspective" data-fov="30" data-far="4000"></camera>
-				<sphere class="earth" data-radius="200" data-segments="40" data-rings="30"></sphere>
+				<sphere class="earth rotating" data-radius="200" data-segments="40" data-rings="30"></sphere>
 			</scene>
 		</div>
 
