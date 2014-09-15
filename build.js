@@ -26,6 +26,7 @@ concat({
 		'lib/core.js',
 		'lib/attributes.js',
 		'lib/css.js',
+		'lib/animations.js',
 		'lib/effects.js',
 		'lib/events.js',
 		'lib/manipulation.js',
