@@ -11,14 +11,20 @@
 			scene {}
 
 			#main-cam {
-				-webkit-transform: translate3d( 0, 500px, 2000px);
+				-webkit-transform: translate3d( -500px, -500px, 5000px);
 				 /*-webkit-backface-visibility: hidden;
 				-webkit-perspective: 1000; */
 			}
 
-			button#add-new {
+			#controls {
 				position: absolute;
-				z-index: 9999;
+				bottom: 20%;
+				width: 100%;
+				text-align: center;
+			}
+			button#add-new {
+				padding: 16px;
+				font-size: 2em;
 			}
 
 			.circle {
@@ -30,7 +36,14 @@
 
 	<body>
 
-		<button id="add-new">Add New</button>
+		<header>
+			<h2><a href="https://github.com/makesites/jquery-three">jQuery Three</a></h2>
+			<p>Interact with the button to get a variety of spheres, in different colors and positions, using regular Handlebars helpers | <a href="binary.html">next &gt;</a></p>
+		</header>
+
+		<div id="controls">
+			<button id="add-new">Gimme another one</button>
+		</div>
 
 		<div id="main">
 			<scene id="first">
