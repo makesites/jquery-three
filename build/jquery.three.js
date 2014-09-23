@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Mon, 15 Sep 2014 05:14:24 GMT)
+ * Version: 0.8.0 (Tue, 23 Sep 2014 10:20:22 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -544,6 +544,15 @@ fn.css = {
 						} catch( e ){
 							console.log(e);
 						}
+					} else if( object instanceof THREE.Sprite ){
+						var src = css[attr].replace(/\s|url\(|\)/g, "");
+						object.material.map = THREE.ImageUtils.loadTexture( src );
+					}
+				break;
+				case "background-size":
+					if( object instanceof THREE.Sprite ){
+						//
+						this.fn.css.sprite.call(this, object, css[attr]);
 					}
 				break;
 			}
@@ -729,6 +738,31 @@ fn.css = {
 		} else {
 			// this is one image... not implemented yet
 		}
+
+	},
+
+	sprite: function( el, attr ){
+		var size = attr.split(" ");
+		var width = parseInt(size[0], 10);
+		var height = parseInt(size[1], 10);
+		// wait for the image to load
+		var loaded = setInterval(function(){
+			// assume map is available...
+			if( !el.material.map.image || !el.material.map.image.width ) return;
+			// image dimensions
+			var imgWidth = el.material.map.image.width;
+			var imgHeight = el.material.map.image.height;
+			//
+			//el.material.uvOffset.set(1 / 5, 0);
+			//el.material.uvScale.set(1 / 5, 1);
+			el.material.map.offset.set(width / imgWidth, 0); // start from top left...
+			el.material.map.repeat.set(width / imgWidth, height / imgHeight);
+			//el.scale.set( width, height, 1 );
+			//console.log("sprite loaded");
+			// stop loop
+			clearInterval(loaded);
+		}, 200);
+
 
 	}
 
@@ -1489,6 +1523,9 @@ Three.prototype.webgl = function( options, callback ){
 			case "cylinder":
 				el = this.webglCylinder( options );
 			break;
+			case "sprite":
+				el = this.webglSprite( options );
+			break;
 			case "terrain":
 				el = this.webglTerrain( options );
 			break;
@@ -1743,6 +1780,41 @@ Three.prototype.webglCylinder = function( attributes ){
 
 	};
 
+Three.prototype.webglSprite = function( attributes ){
+
+		// sprite
+
+		attributes = attributes || {};
+
+		var defaults = {
+			map : false,
+			color: 0xffffff,
+			fog: false,
+			transparent: true,
+			opacity: 1
+			//useScreenCoordinates: true
+			//scene: this.active.scene
+		};
+
+		var options = $.extend(defaults, attributes);
+		// FIX map
+		if ( attributes.map ) {
+			options.map = THREE.ImageUtils.loadTexture( attributes.map );
+		} else {
+			//placeholder pixel
+			options.map = utils.pixel();
+		}
+
+		var material = new THREE.SpriteMaterial( options );
+		material.scaleByViewport = true;
+		material.blending = THREE.AdditiveBlending;
+
+		var sprite = new THREE.Sprite( material );
+
+		return sprite;
+
+	};
+
 Three.prototype.webglTerrain = function( attributes ){
 		// assuming that terrain is generated from a heightmap - support class="mesh" in the future?
 		var terrain;
@@ -1876,6 +1948,17 @@ var utils = {
 	now: function(){
 		if( !performance || !performance.now ) return new Date().getTime();
 		return Math.floor( performance.now() ); // are the fractions of a millisecond significant?
+	},
+	// returns a 1x1 invisible texture
+	// used when we have no texture data
+	pixel: function(){
+		var image = document.createElement( 'img' );
+		var texture = new THREE.Texture( image );
+		// not neeeded?
+		image.addEventListener( 'load', function ( event ) {
+			texture.needsUpdate = true;
+		} );
+		image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 	}
 };
 
