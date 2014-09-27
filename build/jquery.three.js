@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Tue, 23 Sep 2014 10:20:22 GMT)
+ * Version: 0.8.0 (Sat, 27 Sep 2014 08:52:40 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -426,6 +426,9 @@ fn.css = {
 		for( var attr in css ){
 			// remove prefixes
 			var key = attr.replace('-webkit-','').replace('-moz-','');
+			// save attribute reference in the object
+			object._style = object._style || {};
+			object._style[key] = css[attr];
 			// supported attributes
 			switch(key){
 				// - width
@@ -553,6 +556,19 @@ fn.css = {
 					if( object instanceof THREE.Sprite ){
 						//
 						this.fn.css.sprite.call(this, object, css[attr]);
+					}
+				break;
+				// "background-position" arrives split in axis
+				case "background-position-x":
+					if( object instanceof THREE.Sprite ){
+						// update sprite
+						this.fn.css.sprite.call(this, object);
+					}
+				break;
+				case "background-position-y":
+					if( object instanceof THREE.Sprite ){
+						// update sprite
+						this.fn.css.sprite.call(this, object);
 					}
 				break;
 			}
@@ -742,20 +758,28 @@ fn.css = {
 	},
 
 	sprite: function( el, attr ){
-		var size = attr.split(" ");
-		var width = parseInt(size[0], 10);
-		var height = parseInt(size[1], 10);
 		// wait for the image to load
 		var loaded = setInterval(function(){
 			// assume map is available...
 			if( !el.material.map.image || !el.material.map.image.width ) return;
+			// fallbacks
+			attr = attr || el._style["background-size"] || "0 0";
+			var size = attr.split(" ");
+			var width = parseFloat(size[0], 10);
+			var height = parseFloat(size[1], 10);
+			// get position from style
+			var x = parseFloat( el._style["background-position-x"] || 0 );
+			var y = parseFloat( el._style["background-position-y"] || 0 );
+
+			if( !width || !height ) return;
+
 			// image dimensions
 			var imgWidth = el.material.map.image.width;
 			var imgHeight = el.material.map.image.height;
 			//
 			//el.material.uvOffset.set(1 / 5, 0);
 			//el.material.uvScale.set(1 / 5, 1);
-			el.material.map.offset.set(width / imgWidth, 0); // start from top left...
+			el.material.map.offset.set( (imgWidth - width - x) / imgWidth, (imgHeight - height - y) / imgHeight ); // start from top left...
 			el.material.map.repeat.set(width / imgWidth, height / imgHeight);
 			//el.scale.set( width, height, 1 );
 			//console.log("sprite loaded");
@@ -820,6 +844,8 @@ function setColor( object, color ){
 		object.material.color.setHex(color);
 	}
 }
+
+
 
 
 Three.prototype.animate = function( options, el ){
@@ -1792,6 +1818,7 @@ Three.prototype.webglSprite = function( attributes ){
 			fog: false,
 			transparent: true,
 			opacity: 1
+			//alignment: THREE.SpriteAlignment.topLeft
 			//useScreenCoordinates: true
 			//scene: this.active.scene
 		};
