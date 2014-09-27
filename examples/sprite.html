@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<title>jQuery Three :: Sprite character</title>
+	<meta charset="utf-8">
+	<!-- common styles in examples -->
+	<link rel="stylesheet" href="assets/css/styles.css" type="text/css" media="screen">
+
+	<style type="text/css">
+
+		scene {
+		}
+
+		#main-cam {
+			-webkit-transform: translate3d(0, 0, 50px);
+			/* -webkit-backface-visibility: hidden;
+			-webkit-perspective: 1000; */
+		}
+
+		sprite#character {
+			background-image: url(assets/img/sprite_king.png);
+			background-size: 37.5px 66.25px;  /* actual pixel size from sprite */
+			width: 10px;
+			height: 10px;
+		}
+
+		/* animation */
+		@-moz-keyframes walk-left {
+			from { -moz-transform: rotateY(0deg); }
+			to { -moz-transform: rotateY(360deg); }
+		}
+
+		@-webkit-keyframes walk-left {
+			from { -webkit-transform: rotateY(0deg); }
+			to { -webkit-transform: rotateY(360deg); }
+		}
+
+		@keyframes walk-left {
+			from { transform:rotateY(0deg); }
+			to { transform:rotateY(360deg); }
+		}
+
+
+		@keyframes walk-right {
+			from { transform:rotateY(0deg); }
+			to { transform:rotateY(360deg); }
+		}
+
+		@keyframes walk-up {
+			from { transform:rotateY(0deg); }
+			to { transform:rotateY(360deg); }
+		}
+
+		@keyframes walk-down {
+			from { transform:rotateY(0deg); }
+			to { transform:rotateY(360deg); }
+		}
+
+		.rotating {
+			-webkit-animation: rotate360 60s linear infinite;
+			-moz-animation: rotate360 60s linear infinite;
+			animation: rotate360 60s linear infinite;
+		}
+
+		.face-left {
+			background-position: 0 0;
+		}
+
+		.face-up {
+			background-position: 0 0;
+		}
+
+		.face-right {
+			background-position: 0 0;
+		}
+
+		.face-down {
+			background-position: 0 0;
+		}
+
+		.walk.face-left {
+			animation: walk-left 2s step(4) infinite;
+		}
+
+		.walk.face-right {
+			animation: walk-left 2s step(4) infinite;
+		}
+
+		.walk.face-up {
+			animation: walk-left 2s step(4) infinite;
+		}
+
+		.walk.face-down {
+			animation: walk-left 2s step(4) infinite;
+		}
+
+	</style>
+
+</head>
+<body>
+
+	<header>
+		<h2><a href="https://github.com/makesites/jquery-three">jQuery Three</a></h2>
+		<p>Here we have a character, animated from a sprite sheet; use the controls to change the animations | <a href="handlebars.html">next &gt;</a></p>
+	</header>
+
+	<div id="main">
+		<scene id="first">
+			<camera id="main-cam" class="perspective" data-fov="30" data-far="1000"></camera>
+			<sprite id="character"></sprite>
+		</scene>
+	</div>
+
+	<div id="controls">
+
+	</div>
+
+	<!-- deps -->
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="assets/js/libs/three.min.js"></script>
+
+	<!-- lib -->
+	<script type="text/javascript" src="../build/jquery.three.js"></script>
+
+	<!-- logic -->
+	<script type="text/javascript">
+
+		// initiate 3d environemnt
+		$("#main").three();
+
+		// controls
+
+	</script>
+
+</body>
+</html>
