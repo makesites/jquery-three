@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Sat, 27 Sep 2014 08:52:40 GMT)
+ * Version: 0.8.0 (Sat, 27 Sep 2014 12:11:49 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -428,7 +428,10 @@ fn.css = {
 			var key = attr.replace('-webkit-','').replace('-moz-','');
 			// save attribute reference in the object
 			object._style = object._style || {};
+			var changed = ( object._style[key] && object._style[key] == css[attr] ) ? false : true; // save old value?
 			object._style[key] = css[attr];
+			// parse only changed atrributes
+			if( !changed ) continue;
 			// supported attributes
 			switch(key){
 				// - width
@@ -522,7 +525,9 @@ fn.css = {
 				break;
 				case "animation-timing-function":
 					// duplicate of animation-timing?
-					this.fn.css.animation.easing = css[attr];
+					// if counting steps, save the number
+					var steps = css[attr].match(/steps\((\d)/); // not closed..
+					this.fn.css.animation.easing = ( steps ) ? parseInt(steps[1], 10) : css[attr];
 				break;
 				case "animation-play-state":
 					this.fn.css.animation.state = css[attr];
@@ -849,7 +854,7 @@ function setColor( object, color ){
 
 
 Three.prototype.animate = function( options, el ){
-		//this.mesh.rotation.z = Date.now() / 1000;
+	//this.mesh.rotation.z = Date.now() / 1000;
 
 	// fallbacks
 	options = options || {};
@@ -867,6 +872,8 @@ Three.prototype.animate = function( options, el ){
 
 	// pickup animation keyframes
 	options.keyframes = this.fn.animate.getKeyframes.call( this, options.name );
+	// exit now...
+	if( !options.keyframes ) return;
 	// set the new animation
 	el._animations[ options.name ] = options;
 	// add to animate queue (once...)
@@ -887,6 +894,7 @@ fn.animate = {
 		// first find the rules
 		var animation = findKeyframesRule( name );
 
+		if(!animation) return;
 		// parse each one of them
 		for(var i in animation.cssRules){
 			var rule = animation.cssRules[i];
@@ -894,13 +902,24 @@ fn.animate = {
 			// FIX: only rules parsed
 			if( !rule.keyText ) continue;
 			// convert percent to 1-100 number
-			var key = parseInt( rule.keyText, 10 );
+			var key = parseInt( rule.keyText, 10 ), val;
 			// find rotation values
 			frame.rotation = this.fn.css.rotate( rule.cssText );
 			// find translate values
 			frame.translation = this.fn.css.translate( rule.cssText );
 			// find scale values
 			frame.scale = this.fn.css.scale( rule.cssText );
+			// other attributes
+			if( rule.cssText.search("background-position-x") > -1 ){
+				frame["background-position"] = frame["background-position"] || {};
+				val = rule.cssText.match(/:[\d|\s|\w]+\;/); // capture everything between : ;
+				if( val ) frame["background-position"].x = parseFloat(val[0].substr(1), 10);
+			}
+			if( rule.cssText.search("background-position-y") > -1 ){
+				frame["background-position"] = frame["background-position"] || {};
+				val = rule.cssText.match(/:[\d|\s|\w]+\;/); // capture everything between : ;
+				if( val ) frame["background-position"].y = parseFloat(val[0].substr(1), 10);
+			}
 			// add to the keyframes
 			keyframes[ key ] = frame;
 		}
@@ -951,6 +970,7 @@ function updateAnimations(){
 		if( !end ) end = keyframes[ 100 ];
 		// apply updates
 		// NOTE: only linear supported for now...
+		//console.log(start, end);
 		// - rotate
 		var rot = {
 			x: ( typeof start.rotation.x != "undefined" && typeof end.rotation.x != "undefined" ) ? (end.rotation.x - start.rotation.x )*(percent/100) : 0,
@@ -963,6 +983,34 @@ function updateAnimations(){
 
 		// - scale
 
+		// - sprites
+		if( this instanceof THREE.Sprite ){
+			// get current sprite index
+			var offset = {
+				x: this.material.map.offset.x,
+				y: this.material.map.offset.y
+			};
+			// increment
+			var steps = animation.easing;
+			var step = 100/steps;
+			var nextStep = ( (parseInt( percent, 10) % step) === 0 ) ? parseInt( percent, 10) / 100 : 0; // every time we return to zero we have a new step
+			if( nextStep ){
+				// FIX: start index of steps from zero
+				nextStep -= 1/steps;
+				// find the right axis
+				if( typeof animation.keyframes[0]["background-position"].x !== "undefined"  ){
+					// - numbers go in reverse order (steps-1 to 0)
+					offset.x = ((steps-1)/steps)-nextStep;
+				}
+				if( typeof animation.keyframes[0]["background-position"].y !== "undefined" ){
+					// - numbers go in reverse order (steps-1 to 0)
+					offset.y = ((steps-1)/steps)-nextStep;
+				}
+				// update sprite
+				this.material.map.offset.set( offset.x, offset.y );
+			}
+
+		}
 		// reset if reached completion
 		if( percent >= 100 ){
 			delete animation.start;
