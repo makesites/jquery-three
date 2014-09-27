@@ -13,6 +13,8 @@
 
 		#main-cam {
 			-webkit-transform: translate3d(0, 0, 50px);
+			-moz-transform: translate3d(0, 0, 50px);
+			transform: translate3d(0, 0, 50px);
 			/* -webkit-backface-visibility: hidden;
 			-webkit-perspective: 1000; */
 		}
@@ -24,74 +26,45 @@
 			height: 10px;
 		}
 
-		/* animation */
-		@-moz-keyframes walk-left {
-			from { -moz-transform: rotateY(0deg); }
-			to { -moz-transform: rotateY(360deg); }
-		}
-
-		@-webkit-keyframes walk-left {
-			from { -webkit-transform: rotateY(0deg); }
-			to { -webkit-transform: rotateY(360deg); }
-		}
-
-		@keyframes walk-left {
-			from { transform:rotateY(0deg); }
-			to { transform:rotateY(360deg); }
-		}
-
-
-		@keyframes walk-right {
-			from { transform:rotateY(0deg); }
-			to { transform:rotateY(360deg); }
-		}
-
-		@keyframes walk-up {
-			from { transform:rotateY(0deg); }
-			to { transform:rotateY(360deg); }
-		}
-
-		@keyframes walk-down {
-			from { transform:rotateY(0deg); }
-			to { transform:rotateY(360deg); }
-		}
-
-		.rotating {
-			-webkit-animation: rotate360 60s linear infinite;
-			-moz-animation: rotate360 60s linear infinite;
-			animation: rotate360 60s linear infinite;
-		}
-
-		.face-left {
-			background-position: 0 0;
-		}
-
-		.face-up {
-			background-position: 0 0;
-		}
-
-		.face-right {
-			background-position: 0 0;
-		}
+		/* direction / idle position */
 
 		.face-down {
 			background-position: 0 0;
 		}
 
-		.walk.face-left {
-			animation: walk-left 2s step(4) infinite;
+		.face-left {
+			background-position: 0 66.25px;
 		}
 
-		.walk.face-right {
-			animation: walk-left 2s step(4) infinite;
+		.face-right {
+			background-position: 0 132.5px;
 		}
 
-		.walk.face-up {
-			animation: walk-left 2s step(4) infinite;
+		.face-up {
+			background-position: 0 198.75px;
 		}
 
-		.walk.face-down {
-			animation: walk-left 2s step(4) infinite;
+
+		/* animation */
+
+		@-moz-keyframes walk {
+			from { background-position-x: 0; }
+			to { background-position-x: 150px; }
+		}
+
+		@-webkit-keyframes walk {
+			from { background-position-x: 0; }
+			to { background-position-x: 150px; }
+		}
+		@keyframes walk {
+			from { background-position-x: 0; }
+			to { background-position-x: 150px; }
+		}
+
+		.walk {
+			-webkit-animation: walk 1.2s steps(4) infinite;
+			-moz-animation: walk 1.2s steps(4) infinite;
+			animation: walk 1.2s steps(4) infinite;
 		}
 
 	</style>
@@ -107,7 +80,7 @@
 	<div id="main">
 		<scene id="first">
 			<camera id="main-cam" class="perspective" data-fov="30" data-far="1000"></camera>
-			<sprite id="character"></sprite>
+			<sprite id="character" class="walk face-down"></sprite>
 		</scene>
 	</div>
 
