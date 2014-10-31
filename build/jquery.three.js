@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.8.0 (Sat, 27 Sep 2014 12:11:49 GMT)
+ * Version: 0.9.0 (Fri, 31 Oct 2014 07:20:48 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -970,7 +970,6 @@ function updateAnimations(){
 		if( !end ) end = keyframes[ 100 ];
 		// apply updates
 		// NOTE: only linear supported for now...
-		//console.log(start, end);
 		// - rotate
 		var rot = {
 			x: ( typeof start.rotation.x != "undefined" && typeof end.rotation.x != "undefined" ) ? (end.rotation.x - start.rotation.x )*(percent/100) : 0,
