@@ -4,7 +4,7 @@
 var mouseX = 0;
 var mouseY = 0;
 
-LookArround = function(e){
+LookAround = function(e){
 
 		// the 3d environment is passed as target
 		var $3d = e.target;
