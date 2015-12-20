@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.0 (Fri, 31 Oct 2014 07:20:48 GMT)
+ * Version: 0.9.1 (Sun, 20 Dec 2015 09:48:23 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -553,7 +553,7 @@ fn.css = {
 							console.log(e);
 						}
 					} else if( object instanceof THREE.Sprite ){
-						var src = css[attr].replace(/\s|url\(|\)/g, "");
+						var src = css[attr].replace(/\s|url\(|"|'|\)/g, "");
 						object.material.map = THREE.ImageUtils.loadTexture( src );
 					}
 				break;
@@ -679,7 +679,7 @@ fn.css = {
 	},
 
 	texture: function( el, attr ){
-		var map = attr.replace(/\s|url\(|\)/g, "");
+		var map = attr.replace(/\s|url\(|"|'|\)/g, "");
 		var material = this.webglMaterial({ map :  map });
 		el.material = material;
 	},
@@ -687,7 +687,7 @@ fn.css = {
 	terrain: function( attr ){
 		var object = this.last;
 
-		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
+		var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
 		if(img instanceof Array){
 			for( var i in img ){
 
@@ -751,7 +751,7 @@ fn.css = {
 
 		// remove any whitespace, the url(..) and
 		// attempt to break it into an array
-		var img = attr.replace(/\s|url\(|\)/g, "").split(',');
+		var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
 		if(img instanceof Array){
 			// expect a six-pack of images
 			this.addSkybox( img );
@@ -849,8 +849,6 @@ function setColor( object, color ){
 		object.material.color.setHex(color);
 	}
 }
-
-
 
 
 Three.prototype.animate = function( options, el ){
