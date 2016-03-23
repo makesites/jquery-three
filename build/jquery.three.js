@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.1 (Sun, 20 Dec 2015 09:48:23 GMT)
+ * Version: 0.9.2 (Wed, 23 Mar 2016 22:44:04 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -1351,9 +1351,15 @@ Three.prototype.addSkybox = function( img ){
 					});
 
 				} else {
-
-					// skybox
-					var reflectionCube = THREE.ImageUtils.loadTextureCube( img );
+					//
+					var reflectionCube;
+					// skybox (with legacy support)
+					if(THREE.REVISION < 70){
+						reflectionCube = THREE.ImageUtils.loadTextureCube( img );
+					} else {
+						var textureLoader = new THREE.CubeTextureLoader();
+						reflectionCube = textureLoader.load( img );
+					}
 					reflectionCube.format = THREE.RGBFormat;
 
 					// does this camera have set values??
@@ -1754,7 +1760,9 @@ Three.prototype.webglPlane = function( attributes ){
 
 		var options = $.extend(defaults, attributes);
 
-		var geometry = new THREE.PlaneGeometry( options.width, options.height );
+		var Constructor = ( options.buffer ) ? THREE.PlaneBufferGeometry : THREE.PlaneGeometry;
+
+		var geometry = new Constructor( options.width, options.height );
 		// make this optional?
 		geometry.dynamic = true;
 		var material = new THREE.MeshBasicMaterial( { color: options.color, wireframe: options.wireframe } );
