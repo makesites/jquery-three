@@ -22,13 +22,15 @@
 			}
 
 			#main-cam {
-				-webkit-transform: translate3d( 0, 0, 500px);
+				-webkit-transform: translate3d( 0, 0, 10px);
 				/* -webkit-backface-visibility: hidden;
 				-webkit-perspective: 1000; */
 			}
 
 			obj {
-				-webkit-transform: translate3d( 0, -100px, 0) scale3d( 2, 2, 2);
+
+				-webkit-transform: translate3d( 0, -2px, 0);
+				/*-webkit-transform: translate3d( 0, 0, 0) scale3d( 2, 2, 2);*/
 				/* -webkit-backface-visibility: hidden;
 				-webkit-perspective: 1000; */
 			}
@@ -58,24 +60,29 @@
 		<script type="text/javascript" src="../build/jquery.three.js"></script>
 
 		<!-- helpers -->
-		<script type="text/javascript" src="assets/js/helpers/lookaround.js"></script>
 		<script type="text/javascript" src="assets/js/helpers/three.bin.js"></script>
 
 		<!-- logic -->
 		<script type="text/javascript">
+			var controls;
 
 			// initiate 3d environemnt
 			$("#main").three({
 				"deps": {
+					"OrbitControls" : "assets/js/libs/OrbitControls.js",
 					"BinaryLoader" : "assets/js/libs/BinaryLoader.js"
 				}
-			}, function(){
-
-
+			}, function( $3d ){
+				//console.log( $3d.renderer.domElement );
+				controls = new THREE.OrbitControls($3d.active.camera, $3d.renderer.domElement);
+				$3d.active.camera.lookAt(new THREE.Vector3(0, 0, 0));
 			});
 
 			// add event listener
-			$("#main").on("update", LookAround);
+			$("#main").on("update", function(){
+				if( !controls ) return;
+				controls.update();
+			});
 
 		</script>
 
