@@ -52,9 +52,13 @@
 			$("#main").three({
 				"deps": {
 					"FlyControls" : "assets/js/libs/FlyControls.js",
-					"ShaderTerrain" : "assets/js/ShaderTerrain.js"
+					"ShaderTerrain" : "assets/js/libs/ShaderTerrain.js"
 				}
-			}, FlyAround.init);
+			}, function( $3d ){
+				// ambient light
+				$3d.active.scene.add( new THREE.AmbientLight( 0xffffff ) );
+				FlyAround.init( $3d );
+			});
 
 			// add event listener
 			$("#main").on("update", FlyAround.update);
