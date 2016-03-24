@@ -20,6 +20,9 @@
 		}
 
 		sprite#character {
+			background-image: url(assets/img/deviantart-hero_walk_cycle_spritesheet_by_mrnoobtastic-d3defej.png);
+			background-size: 128px 128px;
+			/*
 			background-image: url(assets/img/sprite_king.png);
 			background-size: 37.5px 66.25px;  /* actual pixel size from sprite */
 			width: 10px;
@@ -28,20 +31,19 @@
 
 		/* direction / idle position */
 
-		.face-down {
-			background-position: 0 0;
-		}
-
 		.face-left {
-			background-position: 0 66.25px;
+			background-position: 0 0px;
+		}
+		.face-right {
+			background-position: 0 128px;
 		}
 
-		.face-right {
-			background-position: 0 132.5px;
+		.face-down {
+			background-position: 0 256px;
 		}
 
 		.face-up {
-			background-position: 0 198.75px;
+			background-position: 0 384px;
 		}
 
 
@@ -49,16 +51,16 @@
 
 		@-moz-keyframes walk {
 			from { background-position-x: 0; }
-			to { background-position-x: 150px; }
+			to { background-position-x: 512px; }
 		}
 
 		@-webkit-keyframes walk {
 			from { background-position-x: 0; }
-			to { background-position-x: 150px; }
+			to { background-position-x: 512px; }
 		}
 		@keyframes walk {
 			from { background-position-x: 0; }
-			to { background-position-x: 150px; }
+			to { background-position-x: 512px; }
 		}
 
 		.walk {
@@ -67,6 +69,17 @@
 			animation: walk 1.2s steps(4) infinite;
 		}
 
+		/* controls */
+		#controls {
+			z-index: 9999;
+			position: absolute;
+			bottom: 5%;
+			left: 5%;
+		}
+
+		#controls button {
+			font-size: 2em;
+		}
 	</style>
 
 </head>
@@ -85,7 +98,10 @@
 	</div>
 
 	<div id="controls">
-
+		<button class="up">&#8679;</button>
+		<button class="down">&#8681;</button>
+		<button class="right">&#8680;</button>
+		<button class="left">&#8678;</button>
 	</div>
 
 	<!-- deps -->
@@ -99,7 +115,24 @@
 	<script type="text/javascript">
 
 		// initiate 3d environemnt
-		$("#main").three();
+		$("#main").three({ watch: true }, function( $3d ){
+			// add key monitoring...
+			var el = $3d.active.sprite;
+
+			// setup events (replace raw updates with class names)
+			$("button.up").click(function (e) {
+				el.material.map.offset.set( 0, 0);
+			});
+			$("button.down").click(function (e) {
+				el.material.map.offset.set( 0, 1/4);
+			});
+			$("button.right").click(function (e) {
+				el.material.map.offset.set( 0, 2/4);
+			});
+			$("button.left").click(function (e) {
+				el.material.map.offset.set( 0, 3/4);
+			});
+		});
 
 		// controls
 
