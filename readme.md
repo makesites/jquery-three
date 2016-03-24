@@ -17,6 +17,7 @@ Effectively it provides a higher level api that abstracts Three.js methods to kn
 * [Binary Loader](http://makesites.org/jquery-three/examples/binary.html)
 * [Sprite animation](http://makesites.org/jquery-three/examples/sprite.html)
 * [VR shader](http://makesites.org/jquery-three/examples/vr.html)
+* [Water shader](http://makesites.org/jquery-three/examples/water.html)
 
 
 ## Install

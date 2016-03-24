@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>jQuery Three :: Water Shader</title>
+		<meta charset="utf-8">
+		<!-- common styles in examples -->
+		<link rel="stylesheet" href="assets/css/styles.css" type="text/css" media="screen">
+
+		<style type="text/css">
+
+			html, body {
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+			}
+
+			scene {
+				background-image: url(assets/img/skybox/bluesky/px.jpg), url(assets/img/skybox/bluesky/nx.jpg), url(assets/img/skybox/bluesky/py.jpg), url(assets/img/skybox/bluesky/ny.jpg), url(assets/img/skybox/bluesky/pz.jpg), url(assets/img/skybox/bluesky/nz.jpg);
+			}
+
+			water {
+				-webkit-transform:  translate3d( 0, -10px, 0) rotate3d(1, 0, 0, -90deg);
+			}
+
+		</style>
+
+	</head>
+
+	<body>
+
+		<div id="main">
+			<scene id="first">
+				<camera id="main-cam" class="perspective" data-fov="55" data-far="8000"></camera>
+				<water data-width="2000" data-height="2000"></water>
+			</scene>
+		</div>
+
+		<!-- deps -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script type="text/javascript" src="assets/js/libs/three.min.js"></script>
+
+		<!-- lib -->
+		<script src="../build/jquery.three.js"></script>
+
+		<!-- helpers -->
+		<script type="text/javascript" src="assets/js/helpers/three.water.js"></script>
+
+		<!-- logic -->
+		<script type="text/javascript">
+			var controls;
+
+			// initiate 3d environemnt
+			$("#main").three({
+				"deps": {
+					"ShaderWater" : "assets/js/libs/water-material.js"
+				}
+			});
+
+		</script>
+
+	</body>
+</html>
