@@ -20,7 +20,7 @@ THREE.BinaryLoader.prototype = {
 	constructor: THREE.BinaryLoader,
 
 	// Deprecated
-	
+
 	get statusDomElement () {
 
 		if ( this._statusDomElement === undefined ) {
@@ -705,6 +705,12 @@ THREE.BinaryLoader.prototype = {
 
 		var geometry = new Model( texturePath );
 		var materials = THREE.Loader.prototype.initMaterials( jsonMaterials, texturePath, this.crossOrigin );
+		// FIX: register materials with transparency
+		for( var i in jsonMaterials ){
+			if( jsonMaterials[i].transparent === true ){
+				materials[i].transparent = true;
+			}
+		}
 
 		callback( geometry, materials );
 
