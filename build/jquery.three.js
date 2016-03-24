@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.2 (Wed, 23 Mar 2016 22:44:04 GMT)
+ * Version: 0.9.3 (Thu, 24 Mar 2016 10:50:24 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -212,11 +212,19 @@ Three.prototype = {
 		//
 
 		if( this.active.scene && this.active.camera ){
-			// render the skybox as a first pass
+			// resize skybox to the limits of the active camera (far attribute)
 			if( this.active.skybox ){
-				if( this.active.skybox.camera ) this.active.skybox.camera.rotation.copy( this.active.camera.rotation );
-				this.renderer.render( this.active.skybox.scene, this.active.skybox.camera );
+				//if( this.active.skybox.camera ) this.active.skybox.camera.rotation.copy( this.active.camera.rotation );
+				//this.renderer.render( this.active.skybox.scene, this.active.skybox.camera );
+				var horizon = this.active.camera.far;
+				var scale = this.active.skybox.scale;
+				if( scale.x !== horizon )
+					scale.x = scale.y = scale.z = horizon;
+				// always center around camera...
+				var position = this.active.camera.position;
+				this.active.skybox.position.set( position.x, position.y, position.z );
 			}
+
 			this.renderer.render( this.active.scene, this.active.camera );
 		}
 
@@ -256,10 +264,10 @@ Three.prototype = {
 			this.cameras[i].updateProjectionMatrix();
 		}
 		// better way of targeting skybox???
-		if( this.active.skybox ){
-			this.active.skybox.camera.aspect = this.properties.aspect;
-			this.active.skybox.camera.updateProjectionMatrix();
-		}
+		//if( this.active.skybox ){
+		//	this.active.skybox.camera.aspect = this.properties.aspect;
+		//	this.active.skybox.camera.updateProjectionMatrix();
+		//}
 		this.renderer.setSize( this.properties.width, this.properties.height );
 	},
 
@@ -554,7 +562,7 @@ fn.css = {
 						}
 					} else if( object instanceof THREE.Sprite ){
 						var src = css[attr].replace(/\s|url\(|"|'|\)/g, "");
-						object.material.map = THREE.ImageUtils.loadTexture( src );
+						object.material.map = utils.textureLoader( src );
 					}
 				break;
 				case "background-size":
@@ -688,26 +696,28 @@ fn.css = {
 		var object = this.last;
 
 		var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
+		//
 		if(img instanceof Array){
+
 			for( var i in img ){
 
 				if( img[i].search("heightmap") > -1  ){
 
-					var heightmapTexture = THREE.ImageUtils.loadTexture( img[i] );
+					var heightmapTexture = utils.textureLoader( img[i] );
 					//var heightmapTexture = this.webglTexture( img[i] );
 					object.material.uniforms.tDisplacement.value = heightmapTexture;
-					object.material.uniforms.uDisplacementScale.value = 375;
-					// heightmap also the second diffuse map?
-					var diffuseTexture2 = heightmapTexture;
-					diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+					object.material.uniforms.uDisplacementScale.value = 2.436143 * 100; // options.scale = 100;
 
-					object.material.uniforms.tDiffuse2.value = diffuseTexture2;
-					object.material.uniforms.enableDiffuse2.value = true;
+					// heightmap also the second diffuse map?
+					//var diffuseTexture2 = heightmapTexture;
+					//diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+					//object.material.uniforms.tDiffuse2.value = diffuseTexture2;
+					//object.material.uniforms.enableDiffuse2.value = true;
 
 				}
 				if( img[i].search("diffuse") > -1  ){
 
-					var diffuseTexture1 = THREE.ImageUtils.loadTexture( img[i] );
+					var diffuseTexture1 = utils.textureLoader( img[i] );
 					//var diffuseTexture1 = this.webglTexture( img[i] );
 					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
 
@@ -717,9 +727,9 @@ fn.css = {
 				}
 				if( img[i].search("specular") > -1 ){
 
-					var specularMap = THREE.ImageUtils.loadTexture( img[i] );
+					var specularMap = utils.textureLoader( img[i] );
 					//var specularMap = this.webglTexture( img[i] );
-					specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
+					//specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
 
 					object.material.uniforms.tSpecular.value = specularMap;
 					object.material.uniforms.enableSpecular.value = true;
@@ -1334,20 +1344,19 @@ Three.prototype.addAsset = function( obj ){
 
 Three.prototype.addSkybox = function( img ){
 
-				var scene = new THREE.Scene();
+				//var scene = new THREE.Scene();
 				var camera, geometry, material;
 
 				if( img.length == 1){
 
-					camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 1100 );
-					camera.target = new THREE.Vector3( 0, 0, 0 );
+					//camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 1100 );
+					//camera.target = new THREE.Vector3( 0, 0, 0 );
 
 					// skysphere
-					geometry = new THREE.SphereGeometry( 500, 60, 40 );
+					geometry = new THREE.SphereGeometry( 1, 60, 40 );
 					geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
-
-					material = new THREE.MeshBasicMaterial( {
-						map: THREE.ImageUtils.loadTexture( img[0] )
+					material = new THREE.MeshBasicMaterial({
+						map: utils.textureLoader( img[0] )
 					});
 
 				} else {
@@ -1357,13 +1366,13 @@ Three.prototype.addSkybox = function( img ){
 					if(THREE.REVISION < 70){
 						reflectionCube = THREE.ImageUtils.loadTextureCube( img );
 					} else {
-						var textureLoader = new THREE.CubeTextureLoader();
-						reflectionCube = textureLoader.load( img );
+						var cubeTextureLoader = new THREE.CubeTextureLoader();
+						reflectionCube = cubeTextureLoader.load( img );
 					}
 					reflectionCube.format = THREE.RGBFormat;
 
 					// does this camera have set values??
-					camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 100 );
+					//camera = new THREE.PerspectiveCamera( 50, $(this.el).width() / $(this.el).height(), 1, 100 );
 
 					//var shader = THREE.ShaderUtils.lib.cube;
 					var shader = THREE.ShaderLib.cube;
@@ -1379,18 +1388,25 @@ Three.prototype.addSkybox = function( img ){
 						side: THREE.BackSide
 
 					});
-					geometry = new THREE.BoxGeometry( 100, 100, 100 );
+					// the dimensions of the skybox will be resized to the limits of the active camera (far)
+					geometry = new THREE.BoxGeometry( 1, 1, 1 );
 				}
 
 				var mesh = new THREE.Mesh( geometry, material );
-
-				scene.add( mesh );
+				/*
+				var object = new THREE.Object3D();
+				object.add( mesh );
+				// #40 copy name from mesh
+				object.name = mesh.name = "skybox";
+				*/
+				this.active.scene.add( mesh );
 
 				// save as active
-				this.active.skybox = {
-					scene : scene,
-					camera : camera
-				};
+				this.active.skybox = mesh;
+				//this.active.skybox = {
+				//	scene : scene,
+				//	camera : camera
+				//};
 	};
 
 Three.prototype.addTerrain = function( obj ){
@@ -1703,13 +1719,13 @@ Three.prototype.webglMaterial = function( attributes ){
 			if( shader.uniforms )  settings.uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 			if( shader.vertexShader )  settings.vertexShader = shader.vertexShader;
 			if( shader.fragmentShader )  settings.fragmentShader = shader.fragmentShader;
-			if( options.map && shader.uniforms) settings.uniforms.texture.texture= THREE.ImageUtils.loadTexture( options.map );
+			if( options.map && shader.uniforms) settings.uniforms.texture.texture= utils.textureLoader( options.map );
 			material = new THREE.ShaderMaterial( settings );
 
 		} else {
 			// create a basic material
 			settings = {};
-			if( options.map ) settings.map = THREE.ImageUtils.loadTexture( options.map );
+			if( options.map ) settings.map = utils.textureLoader( options.map );
 			if( options.color && !options.map ) settings.color = options.color;
 			if( options.wireframe ) settings.wireframe = options.wireframe;
 			material = new THREE.MeshBasicMaterial( settings );
@@ -1879,45 +1895,53 @@ Three.prototype.webglSprite = function( attributes ){
 		var options = $.extend(defaults, attributes);
 		// FIX map
 		if ( attributes.map ) {
-			options.map = THREE.ImageUtils.loadTexture( attributes.map );
+			options.map = utils.textureLoader( attributes.map );
 		} else {
 			//placeholder pixel
 			options.map = utils.pixel();
 		}
-
+		// save id (name) for later
+		var name = options.id;
+		// FIX: delete unsupported options
+		delete options.id;
+		delete options['class'];
+		delete options.el;
 		var material = new THREE.SpriteMaterial( options );
 		material.scaleByViewport = true;
 		material.blending = THREE.AdditiveBlending;
 
 		var sprite = new THREE.Sprite( material );
-
+		// save name (id) back to the object
+		sprite.name = name;
 		return sprite;
 
 	};
 
 Three.prototype.webglTerrain = function( attributes ){
+
+		attributes = attributes || {};
+
 		// assuming that terrain is generated from a heightmap - support class="mesh" in the future?
 		var terrain;
 
 		var defaults = {
-
+			lights: true,
+			fog: true
 		};
 
-
+		var options = $.extend(defaults, attributes);
+/*
 		this.active.scene.add( new THREE.AmbientLight( 0x111111 ) );
 
 		directionalLight = new THREE.DirectionalLight( 0xffffff, 1.15 );
 		directionalLight.position.set( 500, 2000, 0 );
 		this.active.scene.add( directionalLight );
-
-
-		var plane = new THREE.PlaneGeometry( 6000, 6000, 256, 256 );
+*/
+		var plane = new THREE.PlaneBufferGeometry( 6000, 6000, 256, 256 );
 
 		plane.computeFaceNormals();
 		plane.computeVertexNormals();
-		plane.computeTangents();
-
-		//
+		//plane.computeTangents();
 
 		var terrainShader = THREE.ShaderTerrain.terrain;
 
@@ -1957,10 +1981,16 @@ Three.prototype.webglTerrain = function( attributes ){
 		uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
 		*/
 
-		uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
-		uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
-		uniformsTerrain.uAmbientColor.value.setHex( 0x111111 );
-
+		// allow the terrain to emit amient light from the scene
+		if( THREE.REVISION < 70 ){
+			uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
+			uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
+			uniformsTerrain.uAmbientColor.value.setHex( 0x111111 );
+		} else {
+			uniformsTerrain.diffuse.value.setHex( 0xffffff );
+			uniformsTerrain.specular.value.setHex( 0xffffff );
+			//uniformsTerrain.ambient.value.setHex( 0x111111 );
+		}
 		uniformsTerrain.uRepeatOverlay.value.set( 6, 6 );
 		//
 
@@ -1969,8 +1999,9 @@ Three.prototype.webglTerrain = function( attributes ){
 								uniforms :				uniformsTerrain,
 								vertexShader :		terrainShader.vertexShader,
 								fragmentShader :		terrainShader.fragmentShader,
-								lights :					true,
-								fog :						false
+								lights :					options.lights,
+								fog :						options.fog,
+								needsUpdate: true
 		});
 
 		terrain = new THREE.Mesh( plane, material );
@@ -2012,6 +2043,7 @@ Three.prototype.setProperties = function() {
 		};
 	};
 
+
 // internal object of utilities
 var utils = {
 	// Convert Dashed to CamelCase
@@ -2039,8 +2071,53 @@ var utils = {
 			texture.needsUpdate = true;
 		} );
 		image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+		return texture;
+	},
+	// texture loader (support legacy)
+	textureLoader: function( image ){
+		var map = this.pixel();
+
+		if( THREE.REVISION < 70 ){
+			map = THREE.ImageUtils.loadTexture( image );
+		} else {
+			(new THREE.TextureLoader()).load(image, function( texture ){
+				// update image source on the original map
+				map.image = texture.image;
+			});
+		}
+		// return immediantely (update asychronously)
+		return map;
+	},
+
+	// Convert the color information of an image to height  data
+	// source: http://oos.moxiecode.com/js_webgl/terrain/index.html
+	getHeightData: function(img) {
+		var canvas = document.createElement( 'canvas' );
+		canvas.width = 128;
+		canvas.height = 128;
+		var context = canvas.getContext( '2d' );
+
+		var size = 128 * 128, data = new Float32Array( size );
+
+		context.drawImage(img,0,0);
+
+		for ( var i = 0; i < size; i ++ ) {
+			data[i] = 0;
+		}
+
+		var imgd = context.getImageData(0, 0, 128, 128);
+		var pix = imgd.data;
+
+		var j=0;
+		for (var k = 0, n = pix.length; k < n; k += (4)) {
+			var all = pix[k]+pix[k+1]+pix[k+2];
+			data[j++] = all/30;
+		}
+
+		return data;
 	}
 };
+
 
 /**
  * jQuery.toSelector - get the selector text of a jQuery object
