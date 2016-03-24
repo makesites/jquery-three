@@ -7,6 +7,12 @@ jQuery Three was developed to bridge the gap between WebGL and the DOM by using 
 Effectively it provides a higher level api that abstracts Three.js methods to known common conventions from regular web development.
 
 
+## Dependencies
+
+* jQuery v2.x
+* THREE.js rev.75
+
+
 ## Examples
 
 * [Skybox](http://makesites.org/jquery-three/examples/skybox.html)
