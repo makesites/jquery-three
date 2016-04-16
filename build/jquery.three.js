@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.3 (Thu, 24 Mar 2016 10:50:24 GMT)
+ * Version: 0.9.4 (Sat, 16 Apr 2016 04:01:41 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -25,12 +25,12 @@ window.requestAnimFrame = ( function( callback ) {
 
 (function (root, factory) {
 
-	"use strict";
+	//"use strict";
 
-	var define = define || false;
+	//var define = define || false;
 	var jquery = root.$ || root.jQuery || root.ender;
 
-	if (define && typeof define === 'function' && define.amd) {
+	if (typeof define === 'function' && define.amd){
 		// AMD. Register as an anonymous module.
 		define(['jquery'], factory);
 	} else {
@@ -204,13 +204,7 @@ Three.prototype = {
 
 	},
 	render : function() {
-		// apply transformations
-		$(this.el).trigger({
-			type: "update",
-			target: this
-		});
-		//
-
+		// init render
 		if( this.active.scene && this.active.camera ){
 			// resize skybox to the limits of the active camera (far attribute)
 			if( this.active.skybox ){
@@ -230,6 +224,11 @@ Three.prototype = {
 
 		// update internal animation queue
 		this.fn.animate.update();
+		// trigger update event regardlesss
+		$(this.el).trigger({
+			type: "update",
+			target: this
+		});
 	},
 
 	show : function( ) {  },

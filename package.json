@@ -1,6 +1,6 @@
 {
 	"name" : "jquery.three",
-	"version" : "0.9.3",
+	"version" : "0.9.4",
 	"author" : "makesites",
 	"homepage" : "http://github.com/makesites/jquery-three",
 	"description" : "jQuery Three() - jQuery extension with 3D methods (using Three.js)",
