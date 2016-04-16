@@ -84,9 +84,12 @@ function uglify(srcPath, distPath) {
 	ast = pro.ast_squeeze(ast);
 	*/
 
-	var result = _uglify.minify(srcPath, { compressor: {
-		comments : true
-	} });
+	var result = _uglify.minify(srcPath, {
+		mangle: true,
+		output: {
+			comments : /@name|@author|@cc_on|@url|@license/
+		}
+	});
 
 	_fs.writeFileSync(distPath, result.code, FILE_ENCODING);
 	console.log(' '+ distPath +' built.');
