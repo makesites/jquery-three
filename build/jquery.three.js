@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.4 (Sat, 16 Apr 2016 04:01:41 GMT)
+ * Version: 0.9.5 (Sun, 17 Apr 2016 08:44:40 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -42,6 +42,7 @@ window.requestAnimFrame = ( function( callback ) {
 
 // Local variables
 var css, _css;
+var files = {};
 
 // Create a fn container for internal methods
 var fn = {
@@ -435,6 +436,7 @@ fn.css = {
 			var key = attr.replace('-webkit-','').replace('-moz-','');
 			// save attribute reference in the object
 			object._style = object._style || {};
+			object._shaders = object._shaders || {};
 			var changed = ( object._style[key] && object._style[key] == css[attr] ) ? false : true; // save old value?
 			object._style[key] = css[attr];
 			// parse only changed atrributes
@@ -583,6 +585,18 @@ fn.css = {
 						this.fn.css.sprite.call(this, object);
 					}
 				break;
+				case "filter":
+					// get URLs
+					var urls = css[attr].replace(/url\(|"|'|\)/g, "").split(' ');
+					// get shaders
+					for( var i in urls ){
+						var name = urls[i].substring(urls[i].lastIndexOf('/')+1);
+						object._shaders[name] = utils.getFile( urls[i] );
+					}
+					// trigger event
+					var $el = ( object instanceof THREE.Mesh && object.parent instanceof THREE.Object3D ) ? object.parent.$el : object.$el; // parent is always an object...?
+					$el.trigger('css-filter');
+				break;
 			}
 
 		}
@@ -686,8 +700,43 @@ fn.css = {
 	},
 
 	texture: function( el, attr ){
-		var map = attr.replace(/\s|url\(|"|'|\)/g, "");
-		var material = this.webglMaterial({ map :  map });
+		var material;
+		var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
+		if( img.length > 1 ){
+			// shader material
+			// add available shaders
+			var uniforms = {};
+			var params = {};
+			var textureCube = new THREE.CubeTextureLoader().load( img );
+			//var textureCube = app.layout.views.get('back').$3d.active.skybox.material.uniforms.tCube.value );
+			textureCube.format = THREE.RGBFormat;
+
+			uniforms.tCube = {
+				type: "t",
+				value: textureCube
+			};
+			// add shaders if available
+			if(el._shaders){
+				for( var i in el._shaders ){
+					var shader = el._shaders[i];
+					if( i.indexOf('.fs') > -1 ){
+						params.fragmentShader = shader;
+					}
+					if( i.indexOf('.vs') > -1 ){
+						params.vertexShader = shader;
+					}
+				}
+			}
+
+			params.uniforms = uniforms;
+			params.needsUpdate = true;
+
+			material = new THREE.ShaderMaterial( params );
+
+		} else {
+			// basic map material
+			material = this.webglMaterial({ map :  img[0] });
+		}
 		el.material = material;
 	},
 
@@ -1229,6 +1278,9 @@ Three.prototype.add = function( attributes, options ){
 				$html = self.createHTML( attributes );
 				self.target = $html;
 			}
+			// save reference of html tag in object
+			object.$el = $html;
+
 			// apply css
 			var css = self.fn.css.styles.call(self, $html );
 			self.fn.css.set.call(self, webgl, css );
@@ -2114,6 +2166,21 @@ var utils = {
 		}
 
 		return data;
+	},
+
+	getFile: function (url) {
+		// if already downloaded return the same content
+		if( files[url] ) return files[url];
+		files[url] = $.ajax({
+			type		: "GET",
+			url			: url,
+			dataType	: "string",
+			async		: false,
+			success		: function(data) {
+				files[url] = data;
+			}
+		}).responseText;
+		return files[url];
 	}
 };
 
