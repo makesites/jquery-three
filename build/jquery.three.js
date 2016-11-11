@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.5 (Sun, 17 Apr 2016 08:44:40 GMT)
+ * Version: 0.9.5 (Fri, 11 Nov 2016 03:28:36 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -742,16 +742,19 @@ fn.css = {
 
 	terrain: function( attr ){
 		var object = this.last;
-
-		var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
+		var heightmapTexture, diffuseTexture1, specularMap;
+		//var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
+		var img = attr.match(/url\(\s*[\'"]?(([^\\\\\'" \(\)]*(\\\\.)?)+)[\'"]?\s*\)/img);
 		//
 		if(img instanceof Array){
 
 			for( var i in img ){
+				// clean url(...) content
+				img[i] = img[i].replace(/\s|url\(|"|'|\)/g, "");
 
 				if( img[i].search("heightmap") > -1  ){
 
-					var heightmapTexture = utils.textureLoader( img[i] );
+					heightmapTexture = utils.textureLoader( img[i] );
 					//var heightmapTexture = this.webglTexture( img[i] );
 					object.material.uniforms.tDisplacement.value = heightmapTexture;
 					object.material.uniforms.uDisplacementScale.value = 2.436143 * 100; // options.scale = 100;
@@ -765,7 +768,7 @@ fn.css = {
 				}
 				if( img[i].search("diffuse") > -1  ){
 
-					var diffuseTexture1 = utils.textureLoader( img[i] );
+					diffuseTexture1 = utils.textureLoader( img[i] );
 					//var diffuseTexture1 = this.webglTexture( img[i] );
 					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
 
@@ -775,7 +778,7 @@ fn.css = {
 				}
 				if( img[i].search("specular") > -1 ){
 
-					var specularMap = utils.textureLoader( img[i] );
+					specularMap = utils.textureLoader( img[i] );
 					//var specularMap = this.webglTexture( img[i] );
 					//specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
 
@@ -783,6 +786,25 @@ fn.css = {
 					object.material.uniforms.enableSpecular.value = true;
 
 				}
+			}
+			// fallbacks
+			console.log( heightmapTexture );
+			if( !heightmapTexture && img[0] ){
+				heightmapTexture = utils.textureLoader( img[0] );
+				//var heightmapTexture = this.webglTexture( img[i] );
+				object.material.uniforms.tDisplacement.value = heightmapTexture;
+				object.material.uniforms.uDisplacementScale.value = 2.436143 * 100; // options.scale = 100;
+			}
+			if( !diffuseTexture1 && img[1] ){
+				diffuseTexture1 = utils.textureLoader( img[1] );
+				diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
+				object.material.uniforms.tDiffuse1.value = diffuseTexture1;
+				object.material.uniforms.enableDiffuse1.value = true;
+			}
+			if( !specularMap && img[2] ){
+				specularMap = utils.textureLoader( img[2] );
+				object.material.uniforms.tSpecular.value = specularMap;
+				object.material.uniforms.enableSpecular.value = true;
 			}
 		} else {
 			// one image... which texture is it?...
@@ -2032,7 +2054,7 @@ Three.prototype.webglTerrain = function( attributes ){
 		uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
 		*/
 
-		// allow the terrain to emit amient light from the scene
+		// allow the terrain to emit ambient light from the scene
 		if( THREE.REVISION < 70 ){
 			uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
 			uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
@@ -2129,6 +2151,8 @@ var utils = {
 		var map = this.pixel();
 
 		if( THREE.REVISION < 70 ){
+			// FIX: support base64 images
+			if( image.search(";base64,") > -1 ) image = image.replace(/data:image\/(png|jpg|jpeg);base64,/, "");
 			map = THREE.ImageUtils.loadTexture( image );
 		} else {
 			(new THREE.TextureLoader()).load(image, function( texture ){
