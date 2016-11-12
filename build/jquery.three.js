@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.5 (Fri, 11 Nov 2016 03:28:36 GMT)
+ * Version: 0.9.5 (Sat, 12 Nov 2016 13:33:10 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -788,7 +788,6 @@ fn.css = {
 				}
 			}
 			// fallbacks
-			console.log( heightmapTexture );
 			if( !heightmapTexture && img[0] ){
 				heightmapTexture = utils.textureLoader( img[0] );
 				//var heightmapTexture = this.webglTexture( img[i] );
@@ -1991,8 +1990,10 @@ Three.prototype.webglSprite = function( attributes ){
 	};
 
 Three.prototype.webglTerrain = function( attributes ){
-
+		// fallbacks
 		attributes = attributes || {};
+		// prerequisites
+		if( !THREE.ShaderTerrain ) return console.log("THREE.ShaderTerrain needs to be loaded when using <terrain>");
 
 		// assuming that terrain is generated from a heightmap - support class="mesh" in the future?
 		var terrain;
