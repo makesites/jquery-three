@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.6 (Fri, 18 Nov 2016 06:46:44 GMT)
+ * Version: 0.9.7 (Wed, 23 Nov 2016 02:36:57 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -1181,6 +1181,31 @@ Three.prototype.watch = function( el ) {
 	var self = this;
 	var selector = $( el ).selector || "shadow-root"; // fallback to main root
 	var element = $(this.el).toSelector() +" "+ selector;
+	/*
+	var whatToObserve = { childList: true, attributes: true, subtree: true, attributeOldValue: true, attributeFilter: ['class', 'style']};
+	var mutationObserver = new MutationObserver(function(mutationRecords) {
+		$.each(mutationRecords, function(index, mutationRecord) {
+			var e = mutationRecord;
+			if (mutationRecord.type === 'childList') {
+				if (mutationRecord.addedNodes.length > 0) {
+				//DOM node added, do something
+				console.log("execute", mutationRecord );
+				console.log('DOMSubtreeModified', e.target.innerHTML.length, e.target );
+				self.eventSubtree(e);
+				} else if (mutationRecord.removedNodes.length > 0) {
+				//DOM node removed, do something
+				}
+			}
+			else if (mutationRecord.type === 'attributes') {
+				if (mutationRecord.attributeName === 'class') {
+				//class changed, do something
+				self.eventAttribute(e);
+				}
+			}
+		});
+	});
+	mutationObserver.observe(document.body, whatToObserve);
+	*/
 	// monitor new elements
 	$('body').on('DOMSubtreeModified', element, function(e){
 		self.eventSubtree(e);
@@ -1202,7 +1227,7 @@ Three.prototype.watch = function( el ) {
 
 // - new element
 Three.prototype.eventSubtree = function(e) {
-	e.stopPropagation();
+	e.stopPropagation(); // mutation event doesn't propagate?
 
 	// variables
 	var $root = $( $(this.el).toSelector() +" shadow-root" ).get(0);
@@ -1212,16 +1237,24 @@ Three.prototype.eventSubtree = function(e) {
 	this.parent = ( $root == $target ) ? $(e.target) : $(e.target).parent();
 	this.target = $(e.target);
 
-	if (e.target.innerHTML.length > 0) {
-		// Handle new content
-		//var html = e.target.innerHTML;
-		var html = $(e.target).html();
-		//this.newEl = $(e.target).children().last();
-		// #46 parsing one tag at a time
-		//html = $(html).html("").get(0);
-		//this.newEl = $(html).last();
-		this.append( html, { silent : true, target: this.target, traverse: false, watch: true });
-	}
+	// exclude shadow-root
+	//if( $root == $target ) return;
+	// exclude empty targets
+	if(e.target.innerHTML.length === 0) return;
+	// Handle new content
+	//var html = e.target.innerHTML;
+	var html = $(e.target).html();
+	//var wrapper = $(html).eq(0)[0];
+	// FIX: exclude empty div tags (dead-ends)
+	//if( wrapper.tagName == "DIV" &&
+	//if( wrapper.toString().substr(0, 5).toLowerCase() == "<div>" ) return;
+	//	html = wrapper.childNodes[0].toString().trim();
+	//this.newEl = $(e.target).children().last();
+	// #46 parsing one tag at a time
+	//html = $(html).html("").get(0);
+	//this.newEl = $(html).last();
+	this.append( html, { silent : true, target: this.target, traverse: false, watch: true });
+
 };
 
 // - updated attribute
@@ -1274,21 +1307,16 @@ Three.prototype.add = function( attributes, options ){
 				object = webgl;
 			}
 			//this[ attributes.type+"s" ][0] = webgl;
+
 			// condition which elements have an active flag?
 			self.active[ attributes.type ] = object;
-			//
-			if( container ){
-				// save in the objects bucket
-				self[container][object.id] = object;
-			}
-			// add to scene
-			if( attributes.type == "scene"){
-				self.active.scene = object;
-			} else if( self.active.scene ){
-				self.active.scene.add( object );
-			}
+
 			// keep a reference of the object id
 			attributes["data-id"] = object.id || false;
+
+			// FIX: stop now if duplicate id was generated (why?)
+			if( attributes.el.data('id') ) return;
+
 			// create the tag in the shadow dom
 			var $html;
 			if( options.silent && attributes.el){
@@ -1301,12 +1329,25 @@ Three.prototype.add = function( attributes, options ){
 				$html = self.createHTML( attributes );
 				self.target = $html;
 			}
+
 			// save reference of html tag in object
 			object.$el = $html;
 
 			// apply css
 			var css = self.fn.css.styles.call(self, $html );
 			self.fn.css.set.call(self, webgl, css );
+
+			// save in the objects bucket
+			if( container ){
+				self[container][object.id] = object;
+			}
+
+			// add to scene
+			if( attributes.type == "scene"){
+				self.active.scene = object;
+			} else if( self.active.scene ){
+				self.active.scene.add( object );
+			}
 
 		});
 
