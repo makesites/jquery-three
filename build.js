@@ -48,6 +48,7 @@ var src = [
 	'lib/manipulation.js',
 	'lib/markup.js',
 	'lib/selectors.js',
+	'lib/terrain.js',
 	'lib/webgl.js',
 	'lib/utils.js'
 ];
