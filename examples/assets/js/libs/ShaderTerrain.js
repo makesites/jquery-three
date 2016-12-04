@@ -15,43 +15,44 @@ THREE.ShaderTerrain = {
 
 	'terrain' : {
 
-		uniforms: THREE.UniformsUtils.merge( [
+		uniforms: Object.assign(
 
-			THREE.UniformsLib[ "fog" ],
-			THREE.UniformsLib[ "lights" ],
 
 			{
 
-				"enableDiffuse1"  : { type: "i", value: 0 },
-				"enableDiffuse2"  : { type: "i", value: 0 },
-				"enableSpecular"  : { type: "i", value: 0 },
-				"enableReflection": { type: "i", value: 0 },
+				"enableDiffuse1": { value: 0 },
+				"enableDiffuse2": { value: 0 },
+				"enableSpecular": { value: 0 },
+				"enableReflection": { value: 0 },
 
-				"tDiffuse1"	   : { type: "t", value: null },
-				"tDiffuse2"	   : { type: "t", value: null },
-				"tDetail"	   : { type: "t", value: null },
-				"tNormal"	   : { type: "t", value: null },
-				"tSpecular"	   : { type: "t", value: null },
-				"tDisplacement": { type: "t", value: null },
+				"tDiffuse1": { value: null },
+				"tDiffuse2": { value: null },
+				"tDetail": { value: null },
+				"tNormal": { value: null },
+				"tSpecular": { value: null },
+				"tDisplacement": { value: null },
 
-				"uNormalScale": { type: "f", value: 1.0 },
+				"uNormalScale": { value: 1.0 },
 
-				"uDisplacementBias": { type: "f", value: 0.0 },
-				"uDisplacementScale": { type: "f", value: 1.0 },
+				"uDisplacementBias": { value: 0.0 },
+				"uDisplacementScale": { value: 1.0 },
 
-				"diffuse": { type: "c", value: new THREE.Color( 0xeeeeee ) },
-				"specular": { type: "c", value: new THREE.Color( 0x111111 ) },
-				"shininess": { type: "f", value: 30 },
-				"opacity": { type: "f", value: 1 },
+				"diffuse": { value: new THREE.Color( 0xeeeeee ) },
+				"specular": { value: new THREE.Color( 0x111111 ) },
+				"shininess": { value: 30 },
+				"opacity": { value: 1 },
 
-				"uRepeatBase"    : { type: "v2", value: new THREE.Vector2( 1, 1 ) },
-				"uRepeatOverlay" : { type: "v2", value: new THREE.Vector2( 1, 1 ) },
+				"uRepeatBase": { value: new THREE.Vector2( 1, 1 ) },
+				"uRepeatOverlay": { value: new THREE.Vector2( 1, 1 ) },
 
-				"uOffset" : { type: "v2", value: new THREE.Vector2( 0, 0 ) }
+				"uOffset": { value: new THREE.Vector2( 0, 0 ) }
 
-			}
+			},
 
-		] ),
+			THREE.UniformsLib[ "fog" ],
+			THREE.UniformsLib[ "lights" ]
+
+		),
 
 		fragmentShader: [
 
@@ -91,20 +92,12 @@ THREE.ShaderTerrain = {
 			THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
 			THREE.ShaderChunk[ "fog_pars_fragment" ],
 
-			"vec3 inputToLinear( in vec3 a ) {",
-				"#ifdef GAMMA_INPUT",
-				"   return square( a );",
-				"#else",
-				"   return a;",
-				"#endif",
-			"}",
-
 			"float calcLightAttenuation( float lightDistance, float cutoffDistance, float decayExponent ) {",
-				"if ( decayExponent > 0.0 ) {",
-					"return pow( saturate( - lightDistance / cutoffDistance + 1.0 ), decayExponent );",
-				"}",
-				"return 1.0;",
-			"}",
+ 				"if ( decayExponent > 0.0 ) {",
+ 					"return pow( saturate( - lightDistance / cutoffDistance + 1.0 ), decayExponent );",
+ 				"}",
+ 				"return 1.0;",
+ 			"}",
 
 			"void main() {",
 
@@ -125,8 +118,8 @@ THREE.ShaderTerrain = {
 					"vec4 colDiffuse1 = texture2D( tDiffuse1, uvOverlay );",
 					"vec4 colDiffuse2 = texture2D( tDiffuse2, uvOverlay );",
 
-					"colDiffuse1.xyz = inputToLinear( colDiffuse1.xyz );",
-					"colDiffuse2.xyz = inputToLinear( colDiffuse2.xyz );",
+					"colDiffuse1 = GammaToLinear( colDiffuse1, float( GAMMA_FACTOR ) );",
+					"colDiffuse2 = GammaToLinear( colDiffuse2, float( GAMMA_FACTOR ) );",
 
 					"diffuseColor *= mix ( colDiffuse1, colDiffuse2, 1.0 - texture2D( tDisplacement, uvBase ) );",
 
@@ -244,10 +237,9 @@ THREE.ShaderTerrain = {
 
 				"outgoingLight += diffuseColor.xyz * ( totalDiffuseLight + ambientLightColor + totalSpecularLight );",
 
-				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-				THREE.ShaderChunk[ "fog_fragment" ],
-
 				"gl_FragColor = vec4( outgoingLight, diffuseColor.a );",	// TODO, this should be pre-multiplied to allow for bright highlights on very transparent objects
+
+				THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 

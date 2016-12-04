@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.7 (Wed, 23 Nov 2016 02:36:57 GMT)
+ * Version: 0.9.7 (Thu, 01 Dec 2016 11:12:11 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -46,13 +46,14 @@ var files = {};
 
 // Create a fn container for internal methods
 var fn = {
-		self : function(){ return this; }
-	};
+	self : function(){ return this; }
+};
+
 
 
 	var defaults = {
 		alpha: true,
-
+		clock: true,
 		watch: false,
 		//deps : { "THREE" : "http://cdnjs.cloudflare.com/ajax/libs/three.js/r54/three.min.js" }
 		deps: {
@@ -76,7 +77,10 @@ var fn = {
 		this.groups = {
 			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
 		};
-		// #43 - calculating 'actual' framerate
+
+		// init clock
+		if( this.options.clock ) this.clock = new THREE.Clock();
+		// #43 - calculating 'actual' framerate (use clock?)
 		this.frame = {
 			current: 0,
 			rate: 0,
@@ -197,7 +201,7 @@ Three.prototype = {
 		} else {
 			// new frame, new count
 			this.frame.rate = this.frame.current;
-			this.frame.current = 1; //start fron 1 to include running frame ;)
+			this.frame.current = 1; //start from 1 to include running frame ;)
 			this.frame.date = now;
 		}
 		// loop on the next click
@@ -359,6 +363,8 @@ Three.prototype.getAttributes = function( html ){
 					var val = attr[i].value;
 					// check if it's a number...
 					data[key] = ( parseInt(val, 10) || val === "0" ) ? parseInt(val, 10) :  val;
+					// convert boolean
+					if( data[key] === "false" || data[key] === "true" ) data[key] = JSON.parse( data[key] );
 				} else if( attr[i].name && attr[i].name.search("class") === 0 ){
 					// add classes
 					var classes = attr[i].value.split(" ");
@@ -588,15 +594,32 @@ fn.css = {
 					}
 				break;
 				case "filter":
+					// variables
+					// - find element
+					var el, $el;
+					if( object instanceof THREE.Mesh && object.parent instanceof THREE.Object3D ){
+						// parent is always an object...?
+						el = object.parent;
+						$el = object.parent.$el;
+					} else {
+						el = object;
+						$el = object.$el;
+					}
 					// get URLs
-					var urls = css[attr].replace(/url\(|"|'|\)/g, "").split(' ');
+					var urls = css[attr].replace(/url\(|"|'|\)/g, "").split('|'); // all shaders in one url?
+					// prerequisite
+					if( !urls.length ) break;
 					// get shaders
+					el._shaders = el._shaders || {};
 					for( var i in urls ){
 						var name = urls[i].substring(urls[i].lastIndexOf('/')+1);
-						object._shaders[name] = utils.getFile( urls[i] );
+						el._shaders[name] = utils.getFile( urls[i] );
 					}
+					// add helper method
+					el.getShader = function( name ){
+						return this._shaders[name] || null;
+					};
 					// trigger event
-					var $el = ( object instanceof THREE.Mesh && object.parent instanceof THREE.Object3D ) ? object.parent.$el : object.$el; // parent is always an object...?
 					$el.trigger('css-filter');
 				break;
 			}
@@ -743,88 +766,34 @@ fn.css = {
 	},
 
 	terrain: function( attr ){
-		var object = this.last;
-		var heightmapTexture, diffuseTexture1, specularMap;
+		var terrain = this.last;
 		//var img = attr.replace(/\s|url\(|"|'|\)/g, "").split(',');
 		var img = attr.match(/url\(\s*[\'"]?(([^\\\\\'" \(\)]*(\\\\.)?)+)[\'"]?\s*\)/img);
 		//
 		if(img instanceof Array){
-
+			var heightmap, diffuse, specular;
 			for( var i in img ){
 				// clean url(...) content
 				img[i] = img[i].replace(/\s|url\(|"|'|\)/g, "");
 
-				if( img[i].search("heightmap") > -1  ){
+				if( img[i].search("heightmap") > -1 ) heightmap = terrain.updateTexture('heightmap', img[i]);
 
-					heightmapTexture = utils.textureLoader( img[i] );
-					//var heightmapTexture = this.webglTexture( img[i] );
-					object.material.uniforms.tDisplacement.value = heightmapTexture;
-					object.material.uniforms.uDisplacementScale.value = 2.436143 * 100; // options.scale = 100;
+				if( img[i].search("diffuse") > -1 ) diffuse = terrain.updateTexture('diffuse', img[i]);
 
-					// heightmap also the second diffuse map?
-					//var diffuseTexture2 = heightmapTexture;
-					//diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-					//object.material.uniforms.tDiffuse2.value = diffuseTexture2;
-					//object.material.uniforms.enableDiffuse2.value = true;
+				if( img[i].search("specular") > -1 ) specular = terrain.updateTexture('specular', img[i]);
 
-				}
-				if( img[i].search("diffuse") > -1  ){
-
-					diffuseTexture1 = utils.textureLoader( img[i] );
-					//var diffuseTexture1 = this.webglTexture( img[i] );
-					diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-
-					object.material.uniforms.tDiffuse1.value = diffuseTexture1;
-					object.material.uniforms.enableDiffuse1.value = true;
-
-				}
-				if( img[i].search("specular") > -1 ){
-
-					specularMap = utils.textureLoader( img[i] );
-					//var specularMap = this.webglTexture( img[i] );
-					//specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
-
-					object.material.uniforms.tSpecular.value = specularMap;
-					object.material.uniforms.enableSpecular.value = true;
-
-				}
 			}
 			// fallbacks
-			if( !heightmapTexture && img[0] ){
-				heightmapTexture = utils.textureLoader( img[0] );
-				//var heightmapTexture = this.webglTexture( img[i] );
-				object.material.uniforms.tDisplacement.value = heightmapTexture;
-				object.material.uniforms.uDisplacementScale.value = 2.436143 * 100; // options.scale = 100;
-			}
-			if( !diffuseTexture1 && img[1] ){
-				diffuseTexture1 = utils.textureLoader( img[1] );
-				diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-				object.material.uniforms.tDiffuse1.value = diffuseTexture1;
-				object.material.uniforms.enableDiffuse1.value = true;
-			}
-			if( !specularMap && img[2] ){
-				specularMap = utils.textureLoader( img[2] );
-				object.material.uniforms.tSpecular.value = specularMap;
-				object.material.uniforms.enableSpecular.value = true;
-			}
+			if(!heightmap && img[0]) terrain.updateTexture('heightmap', img[0]);
+			if(!diffuse && img[1]) terrain.updateTexture('diffuse', img[1]);
+			if(!specular && img[2]) terrain.updateTexture('specular', img[2]);
+
 		} else {
-			// one image... which texture is it?...
+			// one image... assume it's both heightmap and texture
+			terrain.updateTexture('heightmap', img);
+			terrain.updateTexture('diffuse', img);
 		}
 
-		/*
-
-		leftovers ( normal and detail textures)
-
-		//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-
-		//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
-		//uniformsTerrain[ "uNormalScale" ].value = 1;
-
-		//uniformsTerrain[ "tDetail" ].value = detailTexture;
-
-		//uniformsTerrain[ "uShininess" ].value = 30;
-
-		*/
 	},
 
 
@@ -1697,6 +1666,277 @@ fn.three = function(fn, query ){
 };
 
 
+// internal constructor for Terrain
+var Terrain = function( options ){
+	// prerequisites?
+
+	// reference to the options
+	this.options = options;
+
+	// binding resolution across axis
+	var resX = options.resolution,
+		resY = options.resolution;
+
+	// in both cases the geometry is Buffer
+	var plane = new THREE.PlaneBufferGeometry( options.width, options.height, resX, resY );
+
+	// update normals after images are loaded?
+	plane.computeFaceNormals();
+	plane.computeVertexNormals();
+	//plane.computeTangents( plane );
+	//THREE.BufferGeometryUtils.computeTangents( plane );
+	utils.computeTangents( plane );
+
+	// look if we're rendering using a shader
+	var material = ( options.shader ) ? this.shaderMaterial() : this.basicMaterial();
+
+	// exit now id we didn't generate a material?
+
+	// generate mesh
+	var terrain = new THREE.Mesh( plane, material );
+	// needsUpdate as attribute
+	//terrain.geometry.attributes.normal.needsUpdate = true;
+
+	// save type as part of the mesh
+	terrain.type = "terrain";
+
+	// save attributes
+	terrain._attributes = options;
+
+	// helper methods
+	if( options.shader ){
+		terrain.updateTexture = this.shaderTexture.bind(terrain);
+	} else {
+		terrain.computeElevation = this.computeElevation.bind(terrain);
+		terrain.updateTexture = this.basicTexture.bind(terrain);
+	}
+
+	// save reference
+	this.terrain = terrain;
+
+	return this;
+};
+
+
+Terrain.prototype.shaderMaterial = function(){
+	// prerequisites
+	if( !THREE.ShaderTerrain )
+		return console.log("THREE.ShaderTerrain not loaded. Use data-shader='false' to generate a poly terrain");
+
+	var options = this.options;
+	var terrainShader = THREE.ShaderTerrain.terrain;
+
+	var uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
+
+	/* these are all moved to the css styling...
+	var heightmapTexture = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
+	var diffuseTexture1 = THREE.ImageUtils.loadTexture( "assets/img/terrain/diffuse.jpg" );
+	var diffuseTexture2 = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
+	var specularMap = THREE.ImageUtils.loadTexture( "assets/img/terrain/specular.png");
+
+	diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
+	diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+	//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
+	specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
+
+	//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
+	//uniformsTerrain[ "uNormalScale" ].value = 1;
+
+	uniformsTerrain[ "tDisplacement" ].value = heightmapTexture;
+	uniformsTerrain[ "uDisplacementScale" ].value = 375;
+
+	uniformsTerrain[ "tDiffuse1" ].value = diffuseTexture1;
+	uniformsTerrain[ "tDiffuse2" ].value = diffuseTexture2;
+	uniformsTerrain[ "tSpecular" ].value = specularMap;
+	//uniformsTerrain[ "tDetail" ].value = diffuseTexture1;
+
+	uniformsTerrain[ "enableDiffuse1" ].value = true;
+	uniformsTerrain[ "enableDiffuse2" ].value = true;
+	uniformsTerrain[ "enableSpecular" ].value = true;
+
+	uniformsTerrain[ "uDiffuseColor" ].value.setHex( 0xffffff );
+	uniformsTerrain[ "uSpecularColor" ].value.setHex( 0xffffff );
+	uniformsTerrain[ "uAmbientColor" ].value.setHex( 0x111111 );
+
+	//uniformsTerrain[ "uShininess" ].value = 30;
+	*/
+
+	// allow the terrain to emit ambient light from the scene
+	if( THREE.REVISION < 70 ){
+		uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
+		uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
+		uniformsTerrain.uAmbientColor.value.setHex( 0x111111 );
+	} else {
+		uniformsTerrain.diffuse.value.setHex( 0xffffff );
+		uniformsTerrain.specular.value.setHex( 0xffffff );
+		//uniformsTerrain.ambient.value.setHex( 0x111111 );
+	}
+
+	// this should also be accessible by a background-size value (with percentage conversion)
+	uniformsTerrain.uRepeatOverlay.value.set( options.repeat, options.repeat );
+	//
+
+	var material = new THREE.ShaderMaterial( {
+		uniforms :			uniformsTerrain,
+		vertexShader :		terrainShader.vertexShader,
+		fragmentShader :	terrainShader.fragmentShader,
+		lights :			options.lights,
+		fog :				options.fog,
+		needsUpdate:	  true
+	});
+
+	return material;
+
+};
+
+Terrain.prototype.basicMaterial = function(){
+
+	var material = new THREE.MeshBasicMaterial( { map: utils.pixel(), overdraw: 0.5 } );
+	//
+	return material;
+};
+
+// Helpers
+
+// Terrain helper to compute elevation from heightmap
+Terrain.prototype.computeElevation = function( texture ){
+	// prerequisite
+	if( this._attributes.shader ) return;
+	var terrain = this; // method binded to terrain object
+
+	// canvas for image processing
+	var canvas = document.createElement('canvas');
+	var ctx = canvas.getContext("2d");
+	var img = texture.image;
+	// canvas takes the polygon dimensions | vertices = faces +1 for every side
+	var width = terrain.geometry.parameters.widthSegments + 1;
+	var height = terrain.geometry.parameters.heightSegments + 1;
+	var terrainScale = terrain._attributes.scale; //terrain.material.uniforms.uDisplacementScale.value;
+	var terrainBias = - terrain._attributes.scale/2; //terrain.material.uniforms.uDisplacementBias.value;
+	var size = terrain.geometry.parameters.width; // option?
+	//var scale = size / width;
+	// - main data
+	var vertices = terrain.geometry.attributes.position;
+	var d = [];
+
+	canvas.width = width;
+	canvas.height = height;
+
+	ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height);
+	// scale image to polygons
+	//ctx.scale(width/img.width, height/img.height); // already resized from drawImage
+	// loop through image data
+	var data = ctx.getImageData(0,0, width, height).data;
+
+	for( var i in data ){
+		if ( i % 4 ) continue; // pick only every forth - item size 4: RGBA
+		// OLD method: calculating the whole vector
+		//var z = ( Math.floor(i/width) ) - (size/2);
+		//var x = (i - ( Math.floor(i/width)*width)) - (size/2);
+		//var y = (data[i]/255 * terrainScale) + terrainBias; // normalize height to a fraction
+		//vertices.push( new THREE.Vector3(x, y, z) );
+		//vertices.push( (data[i]/255 * terrainScale) + terrainBias );
+
+		// updating the z axis of the vertices directly
+		var z = ( (data[i]/255 * terrainScale) + terrainBias ); // terrain has z axis up...
+		// instead combine all colors?
+		//var decimal = (data[i]+data[i+1]+data[i+2])/(3*255);
+		d.push( z );
+		vertices.setZ( i/4, z );
+	}
+
+	// update the vertices in the terrain object
+	terrain.geometry.attributes.position.needsUpdate = true;
+};
+
+Terrain.prototype.shaderTexture = function(type, img){
+
+	var texture = utils.textureLoader( img ); //this.webglTexture( img );
+
+	if( type == 'heightmap' ){
+		var terrainScale = this._attributes.scale; // modified through an option
+
+		this.material.uniforms.tDisplacement.value = texture;
+		this.material.uniforms.uDisplacementScale.value = terrainScale;
+		this.material.uniforms.uDisplacementBias.value = - terrainScale/2;
+		// heightmap also the second diffuse map?
+		//var diffuseTexture2 = texture;
+		//diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
+		//this.material.uniforms.tDiffuse2.value = diffuseTexture2;
+		//this.material.uniforms.enableDiffuse2.value = true;
+	}
+	if( type == 'diffuse' ){
+
+		texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+		this.material.uniforms.tDiffuse1.value = texture;
+		this.material.uniforms.enableDiffuse1.value = true;
+
+	}
+	if( type == 'specular' ){
+		//var texture = this.webglTexture( img );
+		//texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+		this.material.uniforms.tSpecular.value = texture;
+		this.material.uniforms.enableSpecular.value = true;
+
+	}
+	// always update vertices...
+	// why don't these work with ShaderTerrain?
+	//this.geometry.attributes.position.needsUpdate = true;
+	//this.geometry.verticesNeedUpdate = true;
+
+	/*
+	leftovers ( normal and detail textures)
+
+	//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
+	//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
+	//uniformsTerrain[ "uNormalScale" ].value = 1;
+	//uniformsTerrain[ "tDetail" ].value = detailTexture;
+	//uniformsTerrain[ "uShininess" ].value = 30;
+	*/
+
+	return texture;
+};
+
+
+Terrain.prototype.basicTexture = function(type, img){
+    var texture;
+
+	if( type == 'heightmap' ){
+		texture = utils.textureLoader( img, 'heightmap-loaded' );
+		// texture isn't loaded in material, just used in computeElevation
+		// monitoring event
+		var self = this;
+		// remove pre-existing event...
+		var cb = function(e){
+			self.computeElevation( texture );
+			// trigger element event
+			self.$el.trigger('heightmap-updated');
+		};
+		document.removeEventListener('heightmap-loaded', cb);
+		document.addEventListener('heightmap-loaded', cb, false);
+	}
+	if( type == 'diffuse' ){
+		texture = utils.textureLoader( img );
+		var repeat = this._attributes.repeat;
+		// dirty re-write
+		texture.wrapT = THREE.RepeatWrapping;
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.repeat.set( repeat, repeat );
+		//texture.offset.set( 1, 1 );
+		texture.needsUpdate = true;
+
+		this.material.map = texture;
+	}
+	if( type == 'specular' ){
+		// not supported?
+	}
+
+	return texture;
+};
+
+
 // generic method to create an element
 Three.prototype.webgl = function( options, callback ){
 		// get the type from the tag name
@@ -1752,18 +1992,21 @@ fn.webgl = {
 
 };
 
-Three.prototype.webglScene = function( options ){
+Three.prototype.webglScene = function( attributes ){
 
 		var defaults = {
 			id : false
 		};
 
-		var settings = $.extend(defaults, options);
+		var options = $.extend(defaults, attributes);
 
 		var scene = new THREE.Scene();
 
 		// save in the objects bucket
 		this.scenes[scene.id] = scene;
+
+		// save attributes
+		scene._attributes = options;
 
 		return scene;
 
@@ -1789,6 +2032,9 @@ Three.prototype.webglCamera = function( attributes ){
 		} else {
 			camera = new THREE.PerspectiveCamera( options.fov, options.aspect, options.near, options.far );
 		}
+
+		// save attributes
+		camera._attributes = options;
 
 		return camera;
 	};
@@ -1902,6 +2148,9 @@ Three.prototype.webglPlane = function( attributes ){
 		// set attributes
 		if( options.id ) mesh.name = options.id;
 
+		// save attributes
+		mesh._attributes = options;
+
 		return mesh;
 
 	};
@@ -1931,6 +2180,9 @@ Three.prototype.webglSphere = function( attributes ){
 		// set attributes
 		if( options.id ) mesh.name = options.id;
 
+		// save attributes
+		mesh._attributes = options;
+
 		return mesh;
 	};
 
@@ -1956,6 +2208,9 @@ Three.prototype.webglCube = function( attributes ){
 
 		// set attributes
 		if( options.id ) mesh.name = options.id;
+
+		// save attributes
+		mesh._attributes = options;
 
 		return mesh;
 	};
@@ -1985,6 +2240,9 @@ Three.prototype.webglCylinder = function( attributes ){
 
 		// set attributes
 		if( options.id ) mesh.name = options.id;
+
+		// save attributes
+		mesh._attributes = options;
 
 		return mesh;
 
@@ -2028,6 +2286,10 @@ Three.prototype.webglSprite = function( attributes ){
 		var sprite = new THREE.Sprite( material );
 		// save name (id) back to the object
 		sprite.name = name;
+
+		// save attributes
+		sprite._attributes = options;
+
 		return sprite;
 
 	};
@@ -2035,100 +2297,23 @@ Three.prototype.webglSprite = function( attributes ){
 Three.prototype.webglTerrain = function( attributes ){
 		// fallbacks
 		attributes = attributes || {};
-		// prerequisites
-		if( !THREE.ShaderTerrain ) return console.log("THREE.ShaderTerrain needs to be loaded when using <terrain>");
-
-		// assuming that terrain is generated from a heightmap - support class="mesh" in the future?
-		var terrain;
 
 		var defaults = {
 			lights: true,
-			fog: true
+			fog: true,
+			scale: 256,
+			width: 6000,
+			height: 6000,
+			resolution: 256,
+			shader: true,
+			repeat: 1 // diffuse map repeat
 		};
 
 		var options = $.extend(defaults, attributes);
-/*
-		this.active.scene.add( new THREE.AmbientLight( 0x111111 ) );
 
-		directionalLight = new THREE.DirectionalLight( 0xffffff, 1.15 );
-		directionalLight.position.set( 500, 2000, 0 );
-		this.active.scene.add( directionalLight );
-*/
-		var plane = new THREE.PlaneBufferGeometry( 6000, 6000, 256, 256 );
-
-		plane.computeFaceNormals();
-		plane.computeVertexNormals();
-		//plane.computeTangents( plane );
-		//THREE.BufferGeometryUtils.computeTangents( plane );
-		utils.computeTangents( plane );
-
-		var terrainShader = THREE.ShaderTerrain.terrain;
-
-		uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
-		/*
-		var heightmapTexture = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
-		var diffuseTexture1 = THREE.ImageUtils.loadTexture( "assets/img/terrain/diffuse.jpg" );
-		var diffuseTexture2 = THREE.ImageUtils.loadTexture( "assets/img/terrain/heightmap.png" );
-		var specularMap = THREE.ImageUtils.loadTexture( "assets/img/terrain/specular.png");
-
-		diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-		diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-		//detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-		specularMap.wrapS = specularMap.wrapT = THREE.RepeatWrapping;
-
-		//uniformsTerrain[ "tNormal" ].value = heightmapTexture;
-		//uniformsTerrain[ "uNormalScale" ].value = 1;
-
-		uniformsTerrain[ "tDisplacement" ].value = heightmapTexture;
-		uniformsTerrain[ "uDisplacementScale" ].value = 375;
-
-		uniformsTerrain[ "tDiffuse1" ].value = diffuseTexture1;
-		uniformsTerrain[ "tDiffuse2" ].value = diffuseTexture2;
-		uniformsTerrain[ "tSpecular" ].value = specularMap;
-		//uniformsTerrain[ "tDetail" ].value = diffuseTexture1;
-
-		uniformsTerrain[ "enableDiffuse1" ].value = true;
-		uniformsTerrain[ "enableDiffuse2" ].value = true;
-		uniformsTerrain[ "enableSpecular" ].value = true;
-
-		uniformsTerrain[ "uDiffuseColor" ].value.setHex( 0xffffff );
-		uniformsTerrain[ "uSpecularColor" ].value.setHex( 0xffffff );
-		uniformsTerrain[ "uAmbientColor" ].value.setHex( 0x111111 );
-
-		//uniformsTerrain[ "uShininess" ].value = 30;
-
-		uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
-		*/
-
-		// allow the terrain to emit ambient light from the scene
-		if( THREE.REVISION < 70 ){
-			uniformsTerrain.uDiffuseColor.value.setHex( 0xffffff );
-			uniformsTerrain.uSpecularColor.value.setHex( 0xffffff );
-			uniformsTerrain.uAmbientColor.value.setHex( 0x111111 );
-		} else {
-			uniformsTerrain.diffuse.value.setHex( 0xffffff );
-			uniformsTerrain.specular.value.setHex( 0xffffff );
-			//uniformsTerrain.ambient.value.setHex( 0x111111 );
-		}
-		uniformsTerrain.uRepeatOverlay.value.set( 6, 6 );
-		//
-
-		// fog is expensive - disable for now...
-		var material = new THREE.ShaderMaterial( {
-								uniforms :				uniformsTerrain,
-								vertexShader :		terrainShader.vertexShader,
-								fragmentShader :		terrainShader.fragmentShader,
-								lights :					options.lights,
-								fog :						options.fog,
-								needsUpdate: true
-		});
-
-		terrain = new THREE.Mesh( plane, material );
-		// needsUpdate as attribute
-		//terrain.geometry.attributes.normal.needsUpdate = true;
-
-		// save type as part of the mesh
-		terrain.type = "terrain";
+		// logic contained
+		// assuming that terrain is generated from a heightmap - support class="mesh" in the future?
+		var terrain = (new Terrain( options )).terrain;
 
 		//terrain.visible=false;
 		this.active.scene.add( terrain );
@@ -2202,7 +2387,7 @@ var utils = {
 		return texture;
 	},
 	// texture loader (support legacy)
-	textureLoader: function( image ){
+	textureLoader: function( image, eventName ){
 		var map = this.pixel();
 
 		if( THREE.REVISION < 70 ){
@@ -2214,6 +2399,11 @@ var utils = {
 				// update image source on the original map
 				map.image = texture.image;
 				map.needsUpdate = true;
+				// trigger event
+				if( eventName ){
+					var event = new Event(eventName);
+					document.dispatchEvent( event );
+				}
 			});
 		}
 		// return immediantely (update asychronously)
@@ -2478,6 +2668,7 @@ var utils = {
 	};
 
 }( jQuery ));
+
 
 
 // Prototype
