@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.8 (Sun, 11 Dec 2016 10:59:18 GMT)
+ * Version: 0.9.8 (Sun, 11 Dec 2016 13:05:25 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -43,6 +43,7 @@ window.requestAnimFrame = ( function( callback ) {
 // Local variables
 var css, _css;
 var files = {};
+var origin = location.origin || location.protocol + "//" + location.hostname + (location.port ? ":" + location.port: "");
 
 // Create a fn container for internal methods
 var fn = {
@@ -409,14 +410,19 @@ css = function ( styles ){
 		return this;
 	};
 
-
 // Internal functions
 fn.css = {
 	styles: function (a){
 		var sheets = document.styleSheets, o = {};
+
 		// loop through stylesheets
-		for(var i in sheets) {
-			var rules = sheets[i].rules || sheets[i].cssRules;
+		for( var i in sheets ){
+			var sheet = sheets[i];
+			var isOutsideOfDomain = sheet.href && sheet.href.indexOf("/") !== 0 && sheet.href.indexOf(origin) !== 0;
+			// ignore sheets out-of-domain or without CSS rules
+			if(isOutsideOfDomain || sheet.cssRules === null) continue;
+			//
+			var rules = sheet.cssRules || sheet.rules;
 			for(var r in rules) {
 				// #21 - excluding :hover styles from parsing
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
