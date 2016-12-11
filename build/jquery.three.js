@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.8 (Sun, 11 Dec 2016 10:31:27 GMT)
+ * Version: 0.9.8 (Sun, 11 Dec 2016 10:59:18 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -420,6 +420,9 @@ fn.css = {
 			for(var r in rules) {
 				// #21 - excluding :hover styles from parsing
 				if( rules[r].selectorText && rules[r].selectorText.search(":hover") > -1) continue;
+				// excluding other pseudo elements
+				if( rules[r].selectorText && rules[r].selectorText.search("::before") > -1) continue;
+				if( rules[r].selectorText && rules[r].selectorText.search("::after") > -1) continue;
 				try{
 					if(a.is(rules[r].selectorText)) {
 						o = $.extend(o, css2json(rules[r].style));
@@ -1151,16 +1154,23 @@ Three.prototype.watch = function( el ) {
 	var self = this;
 	var selector = $( el ).selector || "shadow-root"; // fallback to main root
 	var element = $(this.el).toSelector() +" "+ selector;
-	/*
+
+	var node = document.getElementById("main").querySelector("shadow-root"), //$(this.el)[0], //$(element)[0],
+		bubbles = false;
+
+	// shim
+	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
+
 	var whatToObserve = { childList: true, attributes: true, subtree: true, attributeOldValue: true, attributeFilter: ['class', 'style']};
-	var mutationObserver = new MutationObserver(function(mutationRecords) {
+	//var whatToObserve = { childList: true, attributes: false, subtree: true };
+	var attrObserver = new MutationObserver(function(mutationRecords) {
 		$.each(mutationRecords, function(index, mutationRecord) {
 			var e = mutationRecord;
 			if (mutationRecord.type === 'childList') {
 				if (mutationRecord.addedNodes.length > 0) {
 				//DOM node added, do something
-				console.log("execute", mutationRecord );
-				console.log('DOMSubtreeModified', e.target.innerHTML.length, e.target );
+				//console.log("execute", mutationRecord );
+				//console.log('DOMSubtreeModified', e.target.innerHTML.length, e.target );
 				self.eventSubtree(e);
 				} else if (mutationRecord.removedNodes.length > 0) {
 				//DOM node removed, do something
@@ -1174,10 +1184,13 @@ Three.prototype.watch = function( el ) {
 			}
 		});
 	});
-	mutationObserver.observe(document.body, whatToObserve);
-	*/
+
+	attrObserver.observe(node, whatToObserve);
+
 	// monitor new elements
+	/*
 	$('body').on('DOMSubtreeModified', element, function(e){
+		console.log(e);
 		self.eventSubtree(e);
 	});
 	// monitor attribute changes
@@ -1191,21 +1204,22 @@ Three.prototype.watch = function( el ) {
 			self.eventAttribute(e);
 		});
 	}
-	// monitor css style changes
-	var node = $(element)[0], bubbles = false;
+	*/
 
-	var observer = new WebKitMutationObserver(function (mutations) {
-	  mutations.forEach(attrModified);
+	var observeStyles = new MutationObserver(function (mutations) {
+		mutations.forEach(stylesModified);
 	});
-	observer.observe(node, { attributes: true, subtree: true });
+	observeStyles.observe(node, { childList: false, attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
-	function attrModified(mutation) {
+
+	// monitor css style changes
+	function stylesModified(mutation) {
 		var el = mutation.target,
 		name = mutation.attributeName,
 		newValue = mutation.target.getAttribute(name),
 		oldValue = mutation.oldValue;
 		// skip all id, data-id updates (not editable from the user)
-		if( name == 'id' || name == 'data-id' ) return;
+		//if( name == 'id' || name == 'data-id' ) return;
 		// styling updates
 		if( name == 'style' ){
 			var object = self.objects[ el.getAttribute('data-id') ] || self.active.terrain;
@@ -1222,7 +1236,7 @@ Three.prototype.watch = function( el ) {
 
 // - new element
 Three.prototype.eventSubtree = function(e) {
-	e.stopPropagation(); // mutation event doesn't propagate?
+	//e.stopPropagation(); // mutation event doesn't propagate?
 
 	// variables
 	var $root = $( $(this.el).toSelector() +" shadow-root" ).get(0);
@@ -1254,7 +1268,7 @@ Three.prototype.eventSubtree = function(e) {
 
 // - updated attribute
 Three.prototype.eventAttribute = function(e) {
-	e.stopPropagation();
+	//e.stopPropagation();
 
 	console.log("attribute",  e.target );
 
@@ -2301,10 +2315,12 @@ Three.prototype.webglSprite = function( attributes ){
 		}
 		// save id (name) for later
 		var name = options.id;
-		// FIX: delete unsupported options
+		// FIX: delete unsupported options (why not define the options supported?)
 		delete options.id;
 		delete options['class'];
 		delete options.el;
+		delete options.style;
+
 		var material = new THREE.SpriteMaterial( options );
 		material.scaleByViewport = true;
 		material.blending = THREE.AdditiveBlending;
