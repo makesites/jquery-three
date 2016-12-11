@@ -1,7 +1,7 @@
 /**
  * @name jquery.three
  * jQuery Three() - jQuery extension with 3D methods (using Three.js)
- * Version: 0.9.8 (Sun, 04 Dec 2016 12:17:36 GMT)
+ * Version: 0.9.8 (Sun, 11 Dec 2016 10:31:27 GMT)
  *
  * @author makesites
  * Created by: Makis Tracend (@tracend)
@@ -72,10 +72,11 @@ var fn = {
 		this.objects = {};
 		this.scenes = {};
 		this.cameras = {};
+		this.terrains = {};
 		this.materials = {};
 		// defining types (extandable)
 		this.groups = {
-			"camera" : "cameras", "scene" : "scenes", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
+			"camera" : "cameras", "scene" : "scenes", "terrain" : "terrains", "mesh" : "objects", "plane" : "objects", "cube" : "objects", "sphere" : "objects", "cylinder" : "objects", "material" : "materials"
 		};
 
 		// init clock
@@ -1191,6 +1192,31 @@ Three.prototype.watch = function( el ) {
 		});
 	}
 	// monitor css style changes
+	var node = $(element)[0], bubbles = false;
+
+	var observer = new WebKitMutationObserver(function (mutations) {
+	  mutations.forEach(attrModified);
+	});
+	observer.observe(node, { attributes: true, subtree: true });
+
+	function attrModified(mutation) {
+		var el = mutation.target,
+		name = mutation.attributeName,
+		newValue = mutation.target.getAttribute(name),
+		oldValue = mutation.oldValue;
+		// skip all id, data-id updates (not editable from the user)
+		if( name == 'id' || name == 'data-id' ) return;
+		// styling updates
+		if( name == 'style' ){
+			var object = self.objects[ el.getAttribute('data-id') ] || self.active.terrain;
+			var webgl = object.children[0] || object;
+			var css = css2json(newValue); // validate?
+			// HACK: why is terrain using this.last?
+			self.last = webgl;
+			self.fn.css.set.call(self, webgl, css );
+		}
+		//console.log(name, newValue, oldValue);
+	}
 
 };
 
@@ -1621,7 +1647,7 @@ Three.prototype.append = function(html, options){
 Three.prototype.get = function( id ){
 
 	// find the element in the containers
-	var el = this.objects[id] || this.cameras[id] || this.scenes[id] || null;
+	var el = this.objects[id] || this.cameras[id] || this.scenes[id] || this.terrains[id] || null;
 
 	return el;
 
@@ -1647,7 +1673,7 @@ fn.find = {
 
 		var id = $(this.el).find("shadow-root "+ query).attr("data-id");
 		// find the element in the containers
-		var el = this.objects[id] || this.cameras[id] || this.scenes[id] || null;
+		var el = this.objects[id] || this.cameras[id] || this.scenes[id] || this.terrains[id] || null;
 
 		return el;
 	}
